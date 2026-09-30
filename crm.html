@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>AIX CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --ink:#000; --paper:#fff; --line:#e3e3e3; --soft:#f5f5f5; --muted:#6f6f6f;
+  --lime:#8dc63f; --lime-dark:#5e8f1f; --red:#c62828; --amber:#b26a00;
+  --font:"IBM Plex Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.55;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.hidden{display:none!important}
+
+/* login */
+#login{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--ink)}
+.login-box{width:100%;max-width:360px;color:#fff}
+.brand{font-weight:700;font-size:44px;letter-spacing:1px;color:var(--lime);line-height:1;direction:ltr;text-align:right}
+.login-box p{color:#aaa;margin:8px 0 28px}
+.login-box label{display:block;font-size:13px;color:#bbb;margin:14px 0 6px}
+.login-box input{width:100%;padding:12px 14px;border:1px solid #333;background:#111;color:#fff;border-radius:6px}
+.login-box button{width:100%;margin-top:22px;padding:12px;border:0;border-radius:6px;background:var(--lime);color:#000;font-weight:700}
+.err{color:#ff8a80;font-size:13px;margin-top:12px;min-height:18px}
+
+/* top */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:var(--ink);color:#fff;position:sticky;top:0;z-index:5}
+header .brand{font-size:24px}
+header .who{font-size:13px;color:#bbb;display:flex;gap:12px;align-items:center}
+.ghost{background:transparent;border:1px solid #444;color:#fff;border-radius:6px;padding:6px 12px;font-size:13px}
+main{max-width:1180px;margin:0 auto;padding:20px}
+
+/* pipeline bar */
+.pipe{display:flex;border:1px solid var(--ink);border-radius:8px;overflow:hidden;margin-bottom:18px}
+.pipe button{flex:1;min-width:0;border:0;border-inline-start:1px solid var(--line);background:var(--paper);padding:12px 8px;text-align:right}
+.pipe button:first-child{border-inline-start:0}
+.pipe b{display:block;font-size:26px;line-height:1.1}
+.pipe span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.pipe button.on{background:var(--ink);color:#fff}
+.pipe button.on span{color:#ccc}
+
+/* due strip */
+.due{border-inline-start:4px solid var(--lime);background:var(--soft);padding:12px 16px;margin-bottom:18px;border-radius:0 6px 6px 0}
+.due h3{margin:0 0 6px;font-size:15px}
+.due ul{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+.due li button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 12px;font-size:13px}
+.due li.late button{border-color:var(--red);color:var(--red)}
+
+/* toolbar */
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.tools input,.tools select{padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.tools input{flex:1;min-width:200px}
+.primary{background:var(--ink);color:#fff;border:0;border-radius:6px;padding:10px 18px;font-weight:600}
+.primary:hover{background:#222}
+
+/* table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{font-size:12px;font-weight:600;color:var(--muted);text-align:right;padding:10px 12px;background:var(--soft);border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.row{cursor:pointer}
+tr.row:hover td{background:#fafafa}
+.name{font-weight:600}
+.sub{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:20px;border:1px solid var(--line);white-space:nowrap}
+.st-new{border-color:var(--ink)}
+.st-won{background:var(--lime);border-color:var(--lime);color:#000;font-weight:600}
+.st-lost{color:var(--muted);text-decoration:line-through}
+.st-quotation_sent,.st-negotiation{background:var(--ink);color:#fff;border-color:var(--ink)}
+.dealer{font-size:11px;background:var(--soft);padding:1px 8px;border-radius:4px;margin-inline-start:6px}
+.late-date{color:var(--red);font-weight:600}
+.today-date{color:var(--lime-dark);font-weight:600}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.icon-link{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--ink);font-size:14px}
+.icon-link:hover{border-color:var(--ink)}
+
+/* drawer */
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10}
+.drawer{position:fixed;top:0;bottom:0;inset-inline-start:0;width:min(520px,100%);background:#fff;z-index:11;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
+.drawer-head h2{margin:0;font-size:18px}
+.x{border:0;background:none;font-size:24px;line-height:1}
+.drawer-body{overflow-y:auto;padding:20px;flex:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid .full{grid-column:1/-1}
+.f label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.f input,.f select,.f textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.f textarea{min-height:70px;resize:vertical}
+.actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+.gcal{border:1px solid var(--ink);border-radius:6px;padding:9px 14px;text-decoration:none;color:var(--ink);font-size:14px}
+.gcal:hover{background:var(--soft)}
+.danger{background:none;border:0;color:var(--red);font-size:13px;margin-inline-start:auto}
+.section-t{font-size:15px;font-weight:700;margin:28px 0 10px;padding-top:18px;border-top:1px solid var(--line)}
+.fu-add textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:6px;min-height:60px}
+.fu-row{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
+.fu-row .f{flex:1;min-width:140px}
+.timeline{list-style:none;margin:16px 0 0;padding:0}
+.timeline li{position:relative;padding:0 18px 16px 0;border-inline-start:0}
+.timeline li::before{content:"";position:absolute;right:3px;top:8px;bottom:-8px;width:1px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline li::after{content:"";position:absolute;right:0;top:6px;width:7px;height:7px;border-radius:50%;background:var(--ink)}
+.timeline .meta{font-size:12px;color:var(--muted)}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:6px;z-index:20;font-size:14px}
+
+@media (max-width:720px){
+  main{padding:14px}
+  .pipe{overflow-x:auto}
+  .pipe button{min-width:92px}
+  .grid{grid-template-columns:1fr}
+  header .who .email{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .drawer{animation:slide .18s ease-out}
+  @keyframes slide{from{transform:translateX(-24px);opacity:.6}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login">
+  <form class="login-box" id="loginForm">
+    <div class="brand">AIX</div>
+    <p>متابعة العملاء — للفريق فقط</p>
+    <label for="email">الإيميل</label>
+    <input id="email" type="email" autocomplete="username" required dir="ltr">
+    <label for="password">الباسورد</label>
+    <input id="password" type="password" autocomplete="current-password" required dir="ltr">
+    <button type="submit">دخول</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</section>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header>
+    <div class="brand">AIX <span style="font-size:14px;color:#fff;font-weight:500">CRM</span></div>
+    <div class="who"><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
+  </header>
+  <main>
+    <div class="pipe" id="pipe"></div>
+    <div class="due hidden" id="due"><h3 id="dueTitle"></h3><ul id="dueList"></ul></div>
+    <div class="tools">
+      <input id="q" type="search" placeholder="دوّر بالاسم، الموبايل أو المنطقة">
+      <select id="fType">
+        <option value="">كل العملاء</option>
+        <option value="end_customer">عميل نهائي</option>
+        <option value="dealer">ديلر</option>
+      </select>
+      <select id="fSource"><option value="">كل المصادر</option></select>
+      <button class="primary" id="newLead">+ عميل جديد</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>العميل</th><th>المنطقة</th><th>المصدر</th><th>الحالة</th><th>الميزانية</th><th>المتابعة الجاية</th><th>مسؤول</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- DRAWER -->
+<div class="shade hidden" id="shade"></div>
+<aside class="drawer hidden" id="drawer" aria-modal="true" role="dialog">
+  <div class="drawer-head"><h2 id="dTitle">عميل جديد</h2><button class="x" id="dClose" aria-label="إغلاق">×</button></div>
+  <div class="drawer-body">
+    <form id="leadForm">
+      <div class="grid">
+        <div class="f"><label>الاسم *</label><input name="name" required></div>
+        <div class="f"><label>الموبايل *</label><input name="phone" required dir="ltr" inputmode="tel"></div>
+        <div class="f"><label>المنطقة / الكمبوند</label><input name="area" list="areas"></div>
+        <div class="f"><label>جه منين</label><select name="source" id="sourceSel"></select></div>
+        <div class="f"><label>النوع</label>
+          <select name="client_type"><option value="end_customer">عميل نهائي</option><option value="dealer">ديلر</option></select></div>
+        <div class="f"><label>الحالة</label><select name="status" id="statusSel"></select></div>
+        <div class="f"><label>الميزانية (جنيه)</label><input name="budget" type="number" min="0" step="1000" dir="ltr"></div>
+        <div class="f"><label>مسؤول عنه</label><input name="assigned_to" list="team"></div>
+        <div class="f"><label>ميعاد المتابعة الجاية</label><input name="next_follow_up" type="date"></div>
+        <div class="f full"><label>ملاحظات</label><textarea name="notes"></textarea></div>
+      </div>
+      <div class="actions">
+        <button class="primary" type="submit" id="saveBtn">حفظ</button>
+        <a class="gcal hidden" id="gcalBtn" target="_blank" rel="noopener">📅 ضيف المتابعة لجوجل كالندر</a>
+        <button type="button" class="danger hidden" id="delBtn">مسح العميل</button>
+      </div>
+    </form>
+
+    <div id="fuBlock" class="hidden">
+      <div class="section-t">سجل المتابعة</div>
+      <form class="fu-add" id="fuForm">
+        <textarea name="note" required placeholder="حصل إيه؟ مثلاً: كلمته، طلب زيارة يوم الخميس"></textarea>
+        <div class="fu-row">
+          <div class="f"><label>غيّر الحالة إلى</label><select name="status" id="fuStatus"><option value="">بدون تغيير</option></select></div>
+          <div class="f"><label>المتابعة الجاية</label><input name="next" type="date"></div>
+        </div>
+        <div class="actions"><button class="primary" type="submit">سجّل المتابعة</button></div>
+      </form>
+      <ul class="timeline" id="timeline"></ul>
+    </div>
+  </div>
+</aside>
+
+<datalist id="areas">
+  <option>الشيخ زايد</option><option>6 أكتوبر</option><option>التجمع الخامس</option><option>القاهرة الجديدة</option>
+  <option>العاصمة الإدارية</option><option>نيو زايد</option><option>حدائق أكتوبر</option><option>مدينة بدر</option>
+</datalist>
+<datalist id="team"><option>عبدالله</option><option>أيمن</option><option>هاجر</option><option>حور</option></datalist>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://xenrnhgxwhujyvtpwmsk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_PWiz7ybQJDngH5Ox3vkx6g_GuCQnQ1R";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const STATUSES = [
+  ["new","جديد"],["contacted","اتكلمنا"],["site_visit","زيارة موقع"],
+  ["quotation_sent","عرض سعر اتبعت"],["negotiation","تفاوض"],["won","اتقفل ✓"],["lost","خسرناه"]
+];
+const SOURCES = [
+  ["instagram","Instagram"],["facebook","Facebook"],["whatsapp","WhatsApp"],["referral","ترشيح"],
+  ["field_visit","زيارة ميدانية"],["website","الموقع"],["dealer","ديلر"],["other","أخرى"]
+];
+const sLabel = v => (STATUSES.find(s=>s[0]===v)||[,v||"—"])[1];
+const srcLabel = v => (SOURCES.find(s=>s[0]===v)||[,v||"—"])[1];
+
+let leads = [], user = null, current = null, statusFilter = "";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayStr = () => new Date().toLocaleDateString("en-CA");
+const fmtMoney = n => n ? Number(n).toLocaleString("en-US") : "—";
+const fmtDate = d => d ? new Date(d).toLocaleDateString("ar-EG",{day:"numeric",month:"short"}) : "—";
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.remove("hidden");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.add("hidden"),2600)}
+function gcalLink(l){
+  if(!l.next_follow_up) return null;
+  const d=l.next_follow_up.replace(/-/g,"");
+  const n=new Date(l.next_follow_up+"T00:00:00"); n.setDate(n.getDate()+1);
+  const e=n.toLocaleDateString("en-CA").replace(/-/g,"");
+  const details=[`موبايل: ${l.phone}`,`واتساب: ${waLink(l.phone)}`,l.area&&`المنطقة: ${l.area}`,`الحالة: ${sLabel(l.status)}`,l.budget&&`الميزانية: ${fmtMoney(l.budget)} جنيه`,l.notes&&`ملاحظات: ${l.notes}`].filter(Boolean).join("\n");
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE"+
+    "&text="+encodeURIComponent("متابعة AIX: "+l.name)+"&dates="+d+"/"+e+"&details="+encodeURIComponent(details);
+}
+function setGcal(l){const a=$("gcalBtn"),u=l&&gcalLink(l);a.classList.toggle("hidden",!u);if(u)a.href=u}
+function waLink(p){let n=String(p||"").replace(/\D/g,"");if(n.startsWith("0"))n="2"+n;return "https://wa.me/"+n}
+
+// fill selects
+const opt = (arr) => arr.map(([v,l])=>`<option value="${v}">${l}</option>`).join("");
+$("statusSel").innerHTML = opt(STATUSES);
+$("fuStatus").innerHTML += opt(STATUSES);
+$("sourceSel").innerHTML = opt(SOURCES);
+$("fSource").innerHTML += opt(SOURCES);
+
+// ---------- AUTH ----------
+$("loginForm").addEventListener("submit", async e=>{
+  e.preventDefault(); $("loginErr").textContent="";
+  const { error } = await sb.auth.signInWithPassword({ email:$("email").value.trim(), password:$("password").value });
+  if(error) $("loginErr").textContent = "الإيميل أو الباسورد غلط";
+});
+$("logout").onclick = ()=> sb.auth.signOut();
+sb.auth.onAuthStateChange((_ev, session)=>{
+  user = session?.user || null;
+  $("login").classList.toggle("hidden", !!user);
+  $("app").classList.toggle("hidden", !user);
+  if(user){ $("userEmail").textContent = user.email; loadLeads(); }
+});
+
+// ---------- DATA ----------
+async function loadLeads(){
+  const { data, error } = await sb.from("leads").select("*").order("created_at",{ascending:false});
+  if(error){ toast("مشكلة في تحميل العملاء"); console.error(error); return; }
+  leads = data; render();
+}
+
+function render(){
+  // pipeline
+  const counts = Object.fromEntries(STATUSES.map(([v])=>[v,0]));
+  leads.forEach(l=>{ if(counts[l.status]!==undefined) counts[l.status]++; });
+  $("pipe").innerHTML =
+    `<button class="${statusFilter===""?"on":""}" data-s=""><b>${leads.length}</b><span>الكل</span></button>` +
+    STATUSES.map(([v,l])=>`<button class="${statusFilter===v?"on":""}" data-s="${v}"><b>${counts[v]}</b><span>${l}</span></button>`).join("");
+  $("pipe").querySelectorAll("button").forEach(b=>b.onclick=()=>{statusFilter=b.dataset.s;render()});
+
+  // due today / overdue
+  const t = todayStr();
+  const due = leads.filter(l=>l.next_follow_up && l.next_follow_up<=t && !["won","lost"].includes(l.status))
+                   .sort((a,b)=>a.next_follow_up.localeCompare(b.next_follow_up));
+  $("due").classList.toggle("hidden", !due.length);
+  $("dueTitle").textContent = `محتاجين متابعة النهارده (${due.length})`;
+  $("dueList").innerHTML = due.map(l=>`<li class="${l.next_follow_up<t?"late":""}"><button data-id="${l.id}">${esc(l.name)}${l.next_follow_up<t?" · متأخر":""}</button></li>`).join("");
+  $("dueList").querySelectorAll("button").forEach(b=>b.onclick=()=>openLead(b.dataset.id));
+
+  // table
+  const q = $("q").value.trim().toLowerCase(), ft=$("fType").value, fs=$("fSource").value;
+  const list = leads.filter(l=>
+    (!statusFilter || l.status===statusFilter) && (!ft || l.client_type===ft) && (!fs || l.source===fs) &&
+    (!q || [l.name,l.phone,l.area].some(x=>String(x||"").toLowerCase().includes(q))));
+  if(!list.length){ $("rows").innerHTML = `<tr><td colspan="8" class="empty">${leads.length?"مفيش نتايج بالفلتر ده":"لسه مفيش عملاء — اضغط «عميل جديد» وابدأ"}</td></tr>`; return; }
+  $("rows").innerHTML = list.map(l=>{
+    const d=l.next_follow_up, cls = !d||["won","lost"].includes(l.status) ? "" : d<t ? "late-date" : d===t ? "today-date" : "";
+    return `<tr class="row" data-id="${l.id}">
+      <td><div class="name">${esc(l.name)}${l.client_type==="dealer"?'<span class="dealer">ديلر</span>':""}</div><div class="sub" dir="ltr" style="text-align:right">${esc(l.phone)}</div></td>
+      <td>${esc(l.area||"—")}</td>
+      <td>${esc(srcLabel(l.source))}</td>
+      <td><span class="tag st-${esc(l.status)}">${esc(sLabel(l.status))}</span></td>
+      <td dir="ltr" style="text-align:right">${fmtMoney(l.budget)}</td>
+      <td class="${cls}">${fmtDate(d)}</td>
+      <td>${esc(l.assigned_to||"—")}</td>
+      <td style="white-space:nowrap"><a class="icon-link" href="tel:${esc(l.phone)}" title="اتصال" onclick="event.stopPropagation()">☎</a>
+          <a class="icon-link" href="${waLink(l.phone)}" target="_blank" rel="noopener" title="واتساب" onclick="event.stopPropagation()">✆</a></td>
+    </tr>`;}).join("");
+  $("rows").querySelectorAll("tr.row").forEach(r=>r.onclick=()=>openLead(r.dataset.id));
+}
+["q","fType","fSource"].forEach(id=>$(id).addEventListener("input",render));
+
+// ---------- DRAWER ----------
+function showDrawer(on){ $("drawer").classList.toggle("hidden",!on); $("shade").classList.toggle("hidden",!on); }
+$("dClose").onclick = $("shade").onclick = ()=>showDrawer(false);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") showDrawer(false); });
+
+$("newLead").onclick = ()=>{
+  current=null; const f=$("leadForm"); f.reset(); setGcal(null);
+  f.status.value="new"; f.source.value="instagram";
+  $("dTitle").textContent="عميل جديد"; $("delBtn").classList.add("hidden"); $("fuBlock").classList.add("hidden");
+  showDrawer(true); f.name.focus();
+};
+
+async function openLead(id){
+  current = leads.find(l=>l.id===id); if(!current) return;
+  const f=$("leadForm");
+  ["name","phone","area","source","client_type","status","budget","assigned_to","next_follow_up","notes"].forEach(k=>f[k].value = current[k] ?? "");
+  $("dTitle").textContent=current.name; $("delBtn").classList.remove("hidden"); $("fuBlock").classList.remove("hidden");
+  $("fuForm").reset(); setGcal(current); showDrawer(true); loadFollowUps();
+}
+
+$("leadForm").addEventListener("submit", async e=>{
+  e.preventDefault(); const f=e.target;
+  const row = {
+    name:f.name.value.trim(), phone:f.phone.value.trim(), area:f.area.value.trim()||null,
+    source:f.source.value, client_type:f.client_type.value, status:f.status.value,
+    budget:f.budget.value?Number(f.budget.value):null, assigned_to:f.assigned_to.value.trim()||null,
+    next_follow_up:f.next_follow_up.value||null, notes:f.notes.value.trim()||null
+  };
+  $("saveBtn").disabled=true;
+  const res = current ? await sb.from("leads").update(row).eq("id",current.id).select().single()
+                      : await sb.from("leads").insert(row).select().single();
+  $("saveBtn").disabled=false;
+  if(res.error){ toast("الحفظ فشل"); console.error(res.error); return; }
+  toast(current?"اتعدل ✓":"العميل اتضاف ✓");
+  await loadLeads(); openLead(res.data.id);
+});
+
+$("delBtn").onclick = async ()=>{
+  if(!current || !confirm(`مسح ${current.name} وكل متابعاته؟`)) return;
+  const { error } = await sb.from("leads").delete().eq("id",current.id);
+  if(error){ toast("المسح فشل"); return; }
+  showDrawer(false); toast("اتمسح"); loadLeads();
+};
+
+// ---------- FOLLOW-UPS ----------
+async function loadFollowUps(){
+  $("timeline").innerHTML = `<li class="meta">بيحمّل…</li>`;
+  const { data, error } = await sb.from("follow_ups").select("*").eq("lead_id",current.id).order("created_at",{ascending:false});
+  if(error){ $("timeline").innerHTML=""; toast("مشكلة في تحميل المتابعات"); return; }
+  $("timeline").innerHTML = data.length ? data.map(x=>`<li><div>${esc(x.note)}</div>
+    <div class="meta">${new Date(x.created_at).toLocaleString("ar-EG",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})} · ${esc(x.done_by||"")}</div></li>`).join("")
+    : `<li class="meta">لسه مفيش متابعات</li>`;
+}
+
+$("fuForm").addEventListener("submit", async e=>{
+  e.preventDefault(); if(!current) return; const f=e.target;
+  const { error } = await sb.from("follow_ups").insert({ lead_id:current.id, note:f.note.value.trim(), done_by:user.email });
+  if(error){ toast("التسجيل فشل"); return; }
+  const upd = {};
+  if(f.status.value) upd.status=f.status.value;
+  if(f.next.value) upd.next_follow_up=f.next.value;
+  if(Object.keys(upd).length) await sb.from("leads").update(upd).eq("id",current.id);
+  toast("المتابعة اتسجلت ✓"); await loadLeads(); openLead(current.id);
+});
+</script>
+</body>
+</html>
