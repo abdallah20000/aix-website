@@ -147,7 +147,7 @@ tr.row:hover td{background:#fafafa}
 <div id="app" class="hidden">
   <header>
     <div class="brand">AIX <span style="font-size:14px;color:#fff;font-weight:500">CRM</span></div>
-    <div class="who"><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
+    <div class="who"><a href="/inventory.html" id="toInv" class="hidden" style="color:#fff">المخزن</a><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
   </header>
   <main>
     <div class="pipe" id="pipe"></div>
@@ -269,12 +269,25 @@ $("loginForm").addEventListener("submit", async e=>{
   if(error) $("loginErr").textContent = "الإيميل أو الباسورد غلط";
 });
 $("logout").onclick = ()=> sb.auth.signOut();
-sb.auth.onAuthStateChange((_ev, session)=>{
+// supabase-js can deadlock if the auth callback awaits other supabase calls, so defer
+sb.auth.onAuthStateChange((_ev, session)=>{ setTimeout(()=>onSession(session), 0); });
+async function onSession(session){
   user = session?.user || null;
+  let role = null;
+  if(user){
+    ({ data: role } = await sb.rpc("my_role"));
+    if(role === "inventory"){ location.replace("/inventory.html"); return; }
+    if(role !== "admin" && role !== "crm"){
+      await sb.auth.signOut();
+      $("loginErr").textContent = "الحساب ده لسه مش متفعّل — كلّم عبدالله";
+      return;
+    }
+  }
+  $("toInv").classList.toggle("hidden", role !== "admin");
   $("login").classList.toggle("hidden", !!user);
   $("app").classList.toggle("hidden", !user);
   if(user){ $("userEmail").textContent = user.email; loadLeads(); }
-});
+}
 
 // ---------- DATA ----------
 async function loadLeads(){
