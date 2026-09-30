@@ -7,3 +7,5 @@ Public site (index.html) and team tools behind Team Login:
 - installs.html: installations, parts taken from stock, before/after photos
 
 Data lives in Supabase; access is by role in the team_members table.
+
+Pushes to main deploy automatically to aixegypt.com via Netlify.
