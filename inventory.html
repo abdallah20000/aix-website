@@ -124,7 +124,7 @@ tr.row:hover td{background:#fafafa}
 <div id="app" class="hidden">
   <header>
     <div class="brand">AIX <span style="font-size:14px;color:#fff;font-weight:500">المخزن</span></div>
-    <div class="who"><a href="/crm.html" id="toCrm" class="hidden">العملاء</a><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
+    <div class="who"><a href="/crm.html" class="admin-only hidden">العملاء</a><a href="/installs.html" class="admin-only hidden">التركيبات</a><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
   </header>
   <main>
     <div class="stats" id="stats"></div>
@@ -221,7 +221,7 @@ async function onSession(session){
     $("gateMsg").innerHTML = 'الحساب ده مش مسموح له يدخل المخزن. <a href="/crm.html">ارجع</a>';
     return;
   }
-  $("toCrm").classList.toggle("hidden", role !== "admin");
+  document.querySelectorAll(".admin-only").forEach(a=>a.classList.toggle("hidden", role !== "admin"));
   $("userEmail").textContent = user.email;
   $("gate").classList.add("hidden"); $("app").classList.remove("hidden");
   loadItems();

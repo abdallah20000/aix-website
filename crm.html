@@ -147,7 +147,7 @@ tr.row:hover td{background:#fafafa}
 <div id="app" class="hidden">
   <header>
     <div class="brand">AIX <span style="font-size:14px;color:#fff;font-weight:500">CRM</span></div>
-    <div class="who"><a href="/inventory.html" id="toInv" class="hidden" style="color:#fff">المخزن</a><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
+    <div class="who"><a href="/inventory.html" class="admin-only hidden" style="color:#fff">المخزن</a><a href="/installs.html" class="admin-only hidden" style="color:#fff">التركيبات</a><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
   </header>
   <main>
     <div class="pipe" id="pipe"></div>
@@ -276,14 +276,15 @@ async function onSession(session){
   let role = null;
   if(user){
     ({ data: role } = await sb.rpc("my_role"));
-    if(role === "inventory"){ location.replace("/inventory.html"); return; }
+    const home = { inventory:"/inventory.html", installs:"/installs.html" }[role];
+    if(home){ location.replace(home); return; }
     if(role !== "admin" && role !== "crm"){
       await sb.auth.signOut();
       $("loginErr").textContent = "الحساب ده لسه مش متفعّل — كلّم عبدالله";
       return;
     }
   }
-  $("toInv").classList.toggle("hidden", role !== "admin");
+  document.querySelectorAll(".admin-only").forEach(a=>a.classList.toggle("hidden", role !== "admin"));
   $("login").classList.toggle("hidden", !!user);
   $("app").classList.toggle("hidden", !user);
   if(user){ $("userEmail").textContent = user.email; loadLeads(); }
