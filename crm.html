@@ -79,7 +79,8 @@ tr.inactive td{color:var(--muted)}
 .qv-body{overflow-y:auto;flex:1;padding:20px;max-width:1000px;width:100%;margin:0 auto}
 .qv-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .picker{position:relative;margin-bottom:10px;display:flex;gap:8px}
-.picker input{flex:1;padding:10px 12px;border:1px solid var(--ink);border-radius:6px}
+.picker input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--ink);border-radius:6px}
+.picker select{padding:10px 8px;border:1px solid var(--ink);border-radius:6px;background:#fff;max-width:38%}
 .picker .line-btn{white-space:nowrap}
 .line-btn{background:#fff;border:1px solid var(--ink);border-radius:6px;padding:9px 14px;font-weight:600}
 .pick-res{position:absolute;top:100%;inset-inline:0;background:#fff;border:1px solid var(--ink);border-top:0;max-height:300px;overflow-y:auto;z-index:3;border-radius:0 0 6px 6px}
@@ -103,6 +104,8 @@ tr.inactive td{color:var(--muted)}
 .qv-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 20px;border-top:1px solid var(--line);background:#fff}
 @media (max-width:720px){
   .qv-meta{grid-template-columns:1fr 1fr}
+  .picker{flex-wrap:wrap}
+  .picker select{flex:1 1 100%;max-width:none}
   .q-items thead{display:none}
   .q-items tr{display:grid;grid-template-columns:1fr 70px 100px 34px;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
   .q-items td{padding:0;width:auto!important}
@@ -344,6 +347,7 @@ tr.row:hover td{background:#fafafa}
       </div>
 
       <div class="picker">
+        <select id="qBrand" aria-label="البراند"><option value="">كل البراندات</option></select>
         <input id="pick" type="search" placeholder="ضيف منتج: اكتب الاسم أو الكود…" aria-label="بحث عن منتج">
         <button type="button" class="line-btn" id="addCustom">+ بند يدوي</button>
         <div class="pick-res hidden" id="pickRes"></div>
@@ -378,6 +382,7 @@ tr.row:hover td{background:#fafafa}
     <button type="button" class="danger hidden" id="qDel">مسح العرض</button>
   </div>
 </section>
+<datalist id="brandList"></datalist>
 <datalist id="rooms">
   <option>الصالة</option><option>الريسبشن</option><option>المطبخ</option><option>غرفة النوم الرئيسية</option>
   <option>غرفة نوم 2</option><option>غرفة نوم 3</option><option>غرفة الأطفال</option><option>الحمام</option>
@@ -398,7 +403,7 @@ tr.row:hover td{background:#fafafa}
         <div class="f"><label>القسم</label><select name="category" id="pCatSel"></select></div>
         <div class="f full"><label>اسم المنتج *</label><input name="name" required></div>
         <div class="f full"><label>الوصف</label><textarea name="description"></textarea></div>
-        <div class="f"><label>الماركة</label><input name="brand" dir="auto"></div>
+        <div class="f"><label>البراند</label><input name="brand" dir="auto" list="brandList"></div>
         <div class="f"></div>
         <div class="f"><label>سعر العميل (جنيه)</label><input name="end_user_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr"></div>
         <div class="f"><label>سعر الديلر (جنيه)</label><input name="dealer_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr"></div>
@@ -681,6 +686,7 @@ function openProduct(id){
     f.category.value = CATEGORIES.includes(currentProduct.category) ? currentProduct.category : "Other";
     f.active.checked = currentProduct.active !== false;
   } else { f.category.value = CATEGORIES[0]; f.active.checked = true; }
+  $("brandList").innerHTML = [...new Set(products.map(p=>p.brand).filter(Boolean))].map(b=>`<option>${esc(b)}</option>`).join("");
   $("pTitle").textContent = currentProduct ? currentProduct.name : "منتج جديد";
   showProductDrawer(true); f.name.focus();
 }
@@ -759,6 +765,7 @@ async function openQuote(id){
   $("qvTitle").textContent = quote.quote_number ? `عرض سعر ${quote.quote_number}` : "عرض سعر جديد";
   $("qDel").classList.toggle("hidden", !quote.id);
   $("pick").value = ""; $("pickRes").classList.add("hidden");
+  fillBrands();
   quoteDirty = !quote.id; renderQuoteItems();
   $("qv").classList.remove("hidden");
 }
@@ -813,10 +820,18 @@ function renderQuoteItems(){
 }
 
 // product picker
+// brand picked first narrows the search to that brand's catalog
+function fillBrands(){
+  const sel = $("qBrand"), keep = sel.value;
+  const brands = [...new Set(products.filter(p=>p.active!==false && p.brand).map(p=>p.brand.trim()))].sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML = `<option value="">كل البراندات</option>` + brands.map(b=>`<option>${esc(b)}</option>`).join("");
+  sel.value = brands.includes(keep) ? keep : "";
+}
 function showPicks(){
-  const q = $("pick").value.trim().toLowerCase(), type = $("qForm").client_type.value;
-  if(!q){ $("pickRes").classList.add("hidden"); return; }
-  const hits = products.filter(p=>p.active!==false && [p.name,p.code,p.brand].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,30);
+  const q = $("pick").value.trim().toLowerCase(), type = $("qForm").client_type.value, brand = $("qBrand").value;
+  if(!q && !brand){ $("pickRes").classList.add("hidden"); return; }
+  const hits = products.filter(p=>p.active!==false && (!brand || (p.brand||"").trim()===brand) &&
+    (!q || [p.name,p.code,p.brand].some(x=>String(x||"").toLowerCase().includes(q)))).slice(0, q ? 30 : 60);
   $("pickRes").innerHTML = hits.length ? hits.map(p=>{ const pr = priceFor(p,type);
     return `<button type="button" data-id="${p.id}"><span><span class="p-name" dir="auto">${esc(p.name)}</span> <span class="sub">${esc(p.code||"")} · ${esc(p.category||"")}</span></span>
       <span class="p-price">${pr!=null ? money(pr) : '<span class="sub">من غير سعر</span>'}</span></button>`; }).join("")
@@ -825,6 +840,8 @@ function showPicks(){
   $("pickRes").querySelectorAll("button").forEach(b=>b.onclick=()=>addProduct(b.dataset.id));
 }
 $("pick").addEventListener("input", showPicks);
+$("pick").addEventListener("focus", ()=>{ if($("qBrand").value) showPicks(); });
+$("qBrand").addEventListener("change", ()=>{ showPicks(); $("pick").focus(); });
 $("pick").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("pickRes").querySelector("button")?.click(); } });
 document.addEventListener("click", e=>{ if(!e.target.closest(".picker")) $("pickRes").classList.add("hidden"); });
 
