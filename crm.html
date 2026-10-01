@@ -7,7 +7,7 @@
 <title>AIX CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{
@@ -94,6 +94,7 @@ tr.inactive td{color:var(--muted)}
 .q-items input{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
 .q-items .c-room{width:16%}.q-items .c-qty{width:9%}.q-items .c-price{width:15%}.q-items .c-total{width:14%;text-align:left;padding-top:13px;font-weight:600;white-space:nowrap}
 .q-items .c-del{width:34px}
+.q-items .c-disc{width:9%}
 .q-items .del{border:0;background:none;color:var(--red);font-size:20px;line-height:1;padding:6px}
 .q-items .desc{font-size:12px;color:var(--muted);margin-top:4px}
 .no-price{border-color:var(--red)!important}
@@ -107,35 +108,45 @@ tr.inactive td{color:var(--muted)}
   .picker{flex-wrap:wrap}
   .picker select{flex:1 1 100%;max-width:none}
   .q-items thead{display:none}
-  .q-items tr{display:grid;grid-template-columns:1fr 70px 100px 34px;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .q-items tr{display:grid;grid-template-columns:1fr 1.3fr 1fr 34px;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
   .q-items td{padding:0;width:auto!important}
   .q-items .c-name{grid-column:1/-1}
   .q-items .c-room{grid-column:1/-1}
   .q-items .c-total{grid-column:1/-2;padding-top:4px}
 }
 
-/* PDF template — rendered off-screen, captured by html2pdf */
+/* PDF template — rendered off-screen, captured by html2pdf (layout follows AIX's Odoo quotation) */
 #pdfHolder{position:fixed;left:-10000px;top:0}
-#pdfDoc{width:794px;background:#fff;color:#000;font-family:var(--font);font-size:12px;line-height:1.5;padding:12px 44px 20px}
-#pdfDoc .d-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:18px}
-#pdfDoc .d-head img{height:46px}
-#pdfDoc .d-co{font-size:11px;color:#444;text-align:left;direction:ltr}
-#pdfDoc h1{font-size:22px;margin:0 0 4px}
-#pdfDoc .d-info{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin-bottom:18px}
-#pdfDoc .d-info b{display:inline-block;min-width:90px;color:#555;font-weight:500}
+#pdfDoc{direction:ltr;text-align:left;width:794px;background:#fff;color:#1f1f1f;font-family:"Roboto","Helvetica Neue",Arial,sans-serif;font-size:12.5px;line-height:1.45;padding:0 0 10px}
+#pdfDoc .d-band{display:flex;justify-content:space-between;align-items:flex-start;background:#eef6ee;padding:26px 34px 46px}
+#pdfDoc .d-band img{height:80px;display:block}
+#pdfDoc .d-mail{color:#1a3fd6;font-weight:700;font-size:12px;margin-top:10px}
+#pdfDoc .d-addr{text-align:right;font-size:12.5px;line-height:1.55;padding-top:18px}
+#pdfDoc .d-titlerow{display:flex;justify-content:flex-end;margin-top:-34px;padding-right:34px}
+#pdfDoc .d-title{position:relative;background:#fff;color:#3a9a2a;font-size:24px;font-weight:500;padding:4px 0 2px 26px}
+#pdfDoc .d-title::before{content:"";position:absolute;left:-22px;top:0;bottom:0;width:44px;background:#fff;transform:skewX(-42deg)}
+#pdfDoc .d-body{padding:0 34px}
+#pdfDoc .d-cust{margin:18px 0 14px}
+#pdfDoc .d-cust .ph{color:#666;font-size:11.5px}
+#pdfDoc .d-info{display:flex;background:#f2f5f2;border-radius:8px;padding:10px 6px 9px;margin-bottom:18px}
+#pdfDoc .d-info div{flex:1;padding:0 6px}
+#pdfDoc .d-info b{display:block;color:#5cb85c;font-weight:500;font-size:12px}
+#pdfDoc .d-tbl{border:1px solid #3a8f2a;border-radius:8px;overflow:hidden}
 #pdfDoc table{width:100%;min-width:0;border-collapse:collapse}
-#pdfDoc th{background:#000;color:#fff;font-size:11px;padding:7px 8px;text-align:right}
-#pdfDoc td{padding:7px 8px;border-bottom:1px solid #ddd;vertical-align:top}
+#pdfDoc th{background:#3a8f2a;color:#fff;font-weight:500;font-size:12.5px;padding:9px 7px;text-align:right;border:0}
+#pdfDoc th:first-child{text-align:left}
+#pdfDoc td{padding:9px 7px;border-top:1px solid #a9adc1;border-left:1px solid #a9adc1;text-align:right;vertical-align:top;white-space:nowrap}
+#pdfDoc td:first-child{border-left:0;text-align:left;white-space:normal;width:100%}
+#pdfDoc td.amt{background:#f1f2f5}
 #pdfDoc tr{page-break-inside:avoid}
-#pdfDoc .room-row td{background:#f2f2f2;font-weight:700}
-#pdfDoc .en{direction:ltr;text-align:left;unicode-bidi:isolate}
-#pdfDoc .d-desc{font-size:10px;color:#666}
-#pdfDoc .num{direction:ltr;text-align:left;white-space:nowrap}
-#pdfDoc .d-tot{width:300px;margin:16px 0 0 auto}
-#pdfDoc .d-tot div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #ddd}
-#pdfDoc .d-tot .g{font-size:16px;font-weight:700;border-bottom:3px solid #000}
-#pdfDoc .d-terms{margin-top:22px;font-size:11px;white-space:pre-wrap;color:#333}
-#pdfDoc .d-foot{margin-top:26px;padding-top:10px;border-top:1px solid #ddd;font-size:10px;color:#777;text-align:center}
+#pdfDoc .room-row td{background:#f6f8f6;font-weight:700;text-align:left;color:#3a8f2a}
+#pdfDoc .d-sums{display:flex;flex-direction:column;align-items:flex-end;margin-top:0}
+#pdfDoc .d-sums .s{display:flex;gap:18px;padding:5px 10px;font-size:12px;color:#444}
+#pdfDoc .d-total{display:flex;background:#3a8f2a;color:#fff;font-weight:700;border-radius:0 0 8px 8px;margin-top:0}
+#pdfDoc .d-total span{padding:8px 10px}
+#pdfDoc .d-total span+span{border-left:1px solid rgba(255,255,255,.35)}
+#pdfDoc .d-terms{margin-top:22px;white-space:pre-wrap;line-height:1.75}
+#pdfDoc .d-note{margin-top:14px;white-space:pre-wrap;color:#333}
 
 /* pipeline bar */
 .pipe{display:flex;border:1px solid var(--ink);border-radius:8px;overflow:hidden;margin-bottom:18px}
@@ -355,7 +366,7 @@ tr.row:hover td{background:#fafafa}
 
       <div class="tbl-wrap">
         <table class="q-items">
-          <thead><tr><th class="c-name">البند</th><th class="c-room">المكان</th><th class="c-qty">العدد</th><th class="c-price">سعر الوحدة</th><th class="c-total">الإجمالي</th><th class="c-del"></th></tr></thead>
+          <thead><tr><th class="c-name">البند</th><th class="c-room">المكان</th><th class="c-qty">العدد</th><th class="c-price">سعر الوحدة</th><th class="c-disc">خصم %</th><th class="c-total">الإجمالي</th><th class="c-del"></th></tr></thead>
           <tbody id="qRows"></tbody>
         </table>
       </div>
@@ -390,7 +401,7 @@ tr.row:hover td{background:#fafafa}
 </datalist>
 
 <!-- PDF TEMPLATE (filled by JS, captured off-screen) -->
-<div id="pdfHolder" aria-hidden="true"><div id="pdfDoc" dir="rtl"></div></div>
+<div id="pdfHolder" aria-hidden="true"><div id="pdfDoc" dir="ltr"></div></div>
 
 <!-- PRODUCT DRAWER (admin only) -->
 <div class="shade hidden" id="pShade"></div>
@@ -711,8 +722,16 @@ $("productForm").addEventListener("submit", async e=>{
 
 // ---------- QUOTATIONS ----------
 const Q_STATUS = { draft:"مسودة", sent:"اتبعت", accepted:"اتقبل ✓", rejected:"اترفض" };
-const DEFAULT_TERMS = "الأسعار بالجنيه المصري";
-const COMPANY = { name:"AIX Smart Home", phone:"0114 409 4440", web:"aixegypt.com", insta:"@aix.eg" };
+const DEFAULT_TERMS = [
+  "The quoted price includes installation and configuration fees.",
+  "Brands : TYSH",
+  "US Standards",
+  "Payment Terms : 50% DP , 40% on Delivery - 10% After Installation And Configuration",
+  "Delivery : 2-4 weeks from PO & DP",
+  "Warranty : 5 Years",
+  "Thank you for your business!"].join("\n");
+const COMPANY = { name:"aix", tagline:"aix , Automated intelligence eXperience", email:"aix.s.egypt@gmail.com",
+  address:["6th october","Giza","Egypt"], contact:"aix" };
 const HTML2PDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
 let quote = null;        // { id, quote_number, lead_id, items:[{product_id,name,description,room,qty,unit_price}] }
 let quoteDirty = false, sharedFile = null;
@@ -749,7 +768,7 @@ async function openQuote(id){
   if(id){
     const [{ data:q, error:e1 }, { data:items, error:e2 }] = await Promise.all([
       sb.from("quotations").select("*").eq("id",id).single(),
-      sb.from("quotation_items").select("product_id,name,description,room,qty,unit_price,sort_order").eq("quotation_id",id).order("sort_order")
+      sb.from("quotation_items").select("product_id,name,description,room,qty,unit_price,discount_pct,sort_order").eq("quotation_id",id).order("sort_order")
     ]);
     if(e1||e2){ toast("مشكلة في فتح العرض"); console.error(e1||e2); return; }
     quote = { id:q.id, quote_number:q.quote_number, lead_id:q.lead_id, items:items.map(({sort_order,...i})=>i) };
@@ -760,7 +779,7 @@ async function openQuote(id){
     const today = todayStr();
     f.client_name.value = current.name; f.client_type.value = current.client_type==="dealer" ? "dealer" : "end_customer";
     f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft"; f.terms.value = DEFAULT_TERMS;
-    $("tInstPct").value = 10; $("tDiscPct").value = 0;
+    $("tInstPct").value = 0; $("tDiscPct").value = 0;
   }
   $("qvTitle").textContent = quote.quote_number ? `عرض سعر ${quote.quote_number}` : "عرض سعر جديد";
   $("qDel").classList.toggle("hidden", !quote.id);
@@ -782,8 +801,9 @@ document.addEventListener("keydown", e=>{
   closeQuote();
 }, true);
 
+const lineTotal = i => (Number(i.qty)||0) * (Number(i.unit_price)||0) * (1 - Math.min(Number(i.discount_pct)||0,100)/100);
 function calcQuote(){
-  const sub = quote.items.reduce((s,i)=>s + (Number(i.qty)||0)*(Number(i.unit_price)||0), 0);
+  const sub = quote.items.reduce((s,i)=>s + lineTotal(i), 0);
   const instPct = Number($("tInstPct").value)||0, discPct = Number($("tDiscPct").value)||0;
   const inst = Math.round(sub*instPct/100), disc = Math.round((sub+inst)*discPct/100);
   return { sub, instPct, inst, discPct, disc, total: sub+inst-disc };
@@ -802,16 +822,17 @@ function renderQuoteItems(){
       <td class="c-room"><input data-k="room" value="${esc(i.room||"")}" list="rooms" placeholder="المكان"></td>
       <td class="c-qty"><input data-k="qty" type="number" min="0.01" step="any" inputmode="decimal" dir="ltr" value="${esc(i.qty)}" aria-label="العدد"></td>
       <td class="c-price"><input data-k="unit_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr" value="${esc(i.unit_price ?? "")}" class="${i.unit_price?"":"no-price"}" aria-label="سعر الوحدة" placeholder="السعر"></td>
-      <td class="c-total" dir="ltr">${money((Number(i.qty)||0)*(Number(i.unit_price)||0))}</td>
+      <td class="c-disc"><input data-k="discount_pct" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${i.discount_pct ? esc(i.discount_pct) : ""}" placeholder="0" aria-label="خصم البند %"></td>
+      <td class="c-total" dir="ltr">${money(lineTotal(i))}</td>
       <td class="c-del"><button type="button" class="del" aria-label="شيل البند">×</button></td>
     </tr>`).join("")
-    : `<tr><td colspan="6" class="empty">دوّر على منتج من فوق وضيفه للعرض</td></tr>`;
+    : `<tr><td colspan="7" class="empty">دوّر على منتج من فوق وضيفه للعرض</td></tr>`;
   $("qRows").querySelectorAll("tr[data-n]").forEach(tr=>{
     const it = quote.items[+tr.dataset.n];
     tr.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{
-      const k = inp.dataset.k; it[k] = (k==="qty"||k==="unit_price") ? (inp.value===""?null:Number(inp.value)) : inp.value;
+      const k = inp.dataset.k; it[k] = (k==="qty"||k==="unit_price"||k==="discount_pct") ? (inp.value===""?null:Number(inp.value)) : inp.value;
       if(k==="unit_price") inp.classList.toggle("no-price", !it.unit_price);
-      tr.querySelector(".c-total").textContent = money((Number(it.qty)||0)*(Number(it.unit_price)||0));
+      tr.querySelector(".c-total").textContent = money(lineTotal(it));
       quoteDirty = true; updateTotals();
     }));
     tr.querySelector(".del").onclick = ()=>{ quote.items.splice(+tr.dataset.n,1); quoteDirty=true; renderQuoteItems(); };
@@ -841,7 +862,11 @@ function showPicks(){
 }
 $("pick").addEventListener("input", showPicks);
 $("pick").addEventListener("focus", ()=>{ if($("qBrand").value) showPicks(); });
-$("qBrand").addEventListener("change", ()=>{ showPicks(); $("pick").focus(); });
+$("qBrand").addEventListener("change", ()=>{
+  const b = $("qBrand").value, t = $("qForm").terms;
+  if(b && /^Brands : .*$/m.test(t.value)){ t.value = t.value.replace(/^Brands : .*$/m, "Brands : "+b); quoteDirty = true; }
+  showPicks(); $("pick").focus();
+});
 $("pick").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("pickRes").querySelector("button")?.click(); } });
 document.addEventListener("click", e=>{ if(!e.target.closest(".picker")) $("pickRes").classList.add("hidden"); });
 
@@ -850,12 +875,12 @@ function addProduct(id){
   const lastRoom = quote.items.length ? quote.items[quote.items.length-1].room : "";
   const same = quote.items.find(i=>i.product_id===p.id && (i.room||"")===(lastRoom||""));
   if(same) same.qty = (Number(same.qty)||0) + 1;
-  else quote.items.push({ product_id:p.id, name:p.name, description:p.description, room:lastRoom||"", qty:1, unit_price:priceFor(p,$("qForm").client_type.value) });
+  else quote.items.push({ product_id:p.id, name:p.name, description:p.description, room:lastRoom||"", qty:1, unit_price:priceFor(p,$("qForm").client_type.value), discount_pct:0 });
   quoteDirty = true; $("pick").value = ""; $("pickRes").classList.add("hidden"); renderQuoteItems(); $("pick").focus();
 }
 $("addCustom").onclick = ()=>{
   const lastRoom = quote.items.length ? quote.items[quote.items.length-1].room : "";
-  quote.items.push({ product_id:null, name:"", description:null, room:lastRoom||"", qty:1, unit_price:null });
+  quote.items.push({ product_id:null, name:"", description:null, room:lastRoom||"", qty:1, unit_price:null, discount_pct:0 });
   quoteDirty = true; renderQuoteItems();
   $("qRows").querySelector("tr:last-child input[data-k=name]")?.focus();
 };
@@ -891,7 +916,8 @@ async function saveQuote(){
     if(del.error) throw del.error;
     const ins = await sb.from("quotation_items").insert(items.map((i,n)=>({
       quotation_id: quote.id, product_id: i.product_id, name: i.name.trim(), description: i.description || null,
-      room: String(i.room||"").trim() || null, qty: Number(i.qty), unit_price: Number(i.unit_price)||0, sort_order: n })));
+      room: String(i.room||"").trim() || null, qty: Number(i.qty), unit_price: Number(i.unit_price)||0,
+      discount_pct: Math.min(Math.max(Number(i.discount_pct)||0,0),100), sort_order: n })));
     if(ins.error) throw ins.error;
   } catch(err){ toast("الحفظ فشل"); console.error(err); return false; }
   finally { $("qSave").disabled = false; }
@@ -914,39 +940,39 @@ function loadScript(src){
     const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=()=>fail(new Error("load "+src)); document.head.appendChild(s); });
 }
 function buildPdf(){
-  const f = $("qForm"), t = calcQuote(), fmtD = d => d ? new Date(d+"T00:00:00").toLocaleDateString("ar-EG",{day:"numeric",month:"long",year:"numeric"}) : "—";
-  // keep rooms together, in the order they first appear
+  const f = $("qForm"), t = calcQuote();
+  const d = v => v ? new Date(v+"T00:00:00").toLocaleDateString("en-US",{month:"2-digit",day:"2-digit",year:"numeric"}) : "—";
+  const n2 = v => Number(v||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  // keep rooms together, in the order they first appear (a room row only shows when rooms are used)
   const order = [], groups = {};
   quote.items.forEach(i=>{ const r = (i.room||"").trim(); if(!(r in groups)){ groups[r]=[]; order.push(r); } groups[r].push(i); });
   const hasRooms = order.some(r=>r);
-  let n = 0;
-  const rows = order.map(r=>(hasRooms ? `<tr class="room-row"><td colspan="5">${esc(r||"عام")}</td></tr>` : "") +
-    groups[r].map(i=>`<tr><td class="num">${++n}</td>
-      <td><div dir="auto">${esc(i.name)}</div>${i.description?`<div class="d-desc" dir="auto">${esc(i.description)}</div>`:""}</td>
-      <td class="num">${money(i.qty)}</td><td class="num">${money(i.unit_price)}</td><td class="num">${money((Number(i.qty)||0)*(Number(i.unit_price)||0))}</td></tr>`).join("")).join("");
+  const rows = order.map(r=>(hasRooms ? `<tr class="room-row"><td colspan="5">${esc(r||"General")}</td></tr>` : "") +
+    groups[r].map(i=>`<tr><td dir="auto">${esc(i.name)}</td><td>${n2(i.qty)} Units</td><td>${n2(i.unit_price)}</td>
+      <td>${Number(i.discount_pct) ? n2(i.discount_pct) : ""}</td><td class="amt">${n2(lineTotal(i))} LE</td></tr>`).join("")).join("");
+  const extra = (t.inst ? `<div class="s"><span>Installation (${n2(t.instPct)}%)</span><span>${n2(t.inst)} LE</span></div>` : "") +
+                (t.disc ? `<div class="s"><span>Discount (${n2(t.discPct)}%)</span><span>-${n2(t.disc)} LE</span></div>` : "");
   $("pdfDoc").innerHTML = `
-    <div class="d-head">
-      <div><h1>عرض سعر</h1><div class="num" style="text-align:right;font-size:14px;font-weight:700">${esc(quote.quote_number)}</div></div>
-      <div class="d-co"><img src="/logo.png" alt="AIX"><div>${COMPANY.name}</div><div>${COMPANY.phone} · ${COMPANY.web}</div><div>Instagram ${COMPANY.insta}</div></div>
+    <div class="d-band">
+      <div><img src="/logo-black.png" alt="aix"><div class="d-mail">${COMPANY.email}</div></div>
+      <div class="d-addr">${COMPANY.address.join("<br>")}</div>
     </div>
-    <div class="d-info">
-      <div><b>العميل:</b> ${esc(f.client_name.value)}</div>
-      <div><b>التاريخ:</b> ${fmtD(f.quote_date.value)}</div>
-      <div><b>الموبايل:</b> <span class="en">${esc(current?.phone||"—")}</span></div>
-      <div><b>ساري لحد:</b> ${fmtD(f.valid_until.value)}</div>
-      ${current?.area?`<div><b>المنطقة:</b> ${esc(current.area)}</div>`:""}
-    </div>
-    <table><thead><tr><th style="width:30px">#</th><th>البند</th><th style="width:60px">العدد</th><th style="width:95px">سعر الوحدة</th><th style="width:105px">الإجمالي</th></tr></thead>
-      <tbody>${rows}</tbody></table>
-    <div class="d-tot">
-      <div><span>إجمالي المنتجات</span><span class="num">${money(t.sub)}</span></div>
-      ${t.inst?`<div><span>تركيب وبرمجة (${money(t.instPct)}%)</span><span class="num">${money(t.inst)}</span></div>`:""}
-      ${t.disc?`<div><span>خصم (${money(t.discPct)}%)</span><span class="num">−${money(t.disc)}</span></div>`:""}
-      <div class="g"><span>الإجمالي (جنيه)</span><span class="num">${money(t.total)}</span></div>
-    </div>
-    ${f.notes.value.trim()?`<div class="d-terms"><b>ملاحظات</b>\n${esc(f.notes.value.trim())}</div>`:""}
-    ${f.terms.value.trim()?`<div class="d-terms"><b>الشروط</b>\n${esc(f.terms.value.trim())}</div>`:""}
-    <div class="d-foot">${COMPANY.name} · ${COMPANY.web} · ${COMPANY.phone}</div>`;
+    <div class="d-titlerow"><div class="d-title">Quotation # ${esc(quote.quote_number)}</div></div>
+    <div class="d-body">
+      <div class="d-cust"><div dir="auto">${esc(f.client_name.value)}</div>${current?.phone?`<div class="ph">${esc(current.phone)}</div>`:""}</div>
+      <div class="d-info">
+        <div><b>Quotation Date</b>${d(f.quote_date.value)}</div>
+        <div><b>Expiration</b>${d(f.valid_until.value)}</div>
+        <div><b>Contact</b>${COMPANY.contact}</div>
+      </div>
+      <div class="d-tbl"><table>
+        <thead><tr><th>Description</th><th>Quantity</th><th>Unit Price</th><th>Disc.%</th><th>Amount</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <div class="d-sums">${extra ? `<div style="margin-top:6px">${extra}</div>` : ""}
+        <div class="d-total"><span>Total</span><span>${n2(t.total)} LE</span></div></div>
+      ${f.terms.value.trim()?`<div class="d-terms" dir="auto">${esc(f.terms.value.trim())}</div>`:""}
+      ${f.notes.value.trim()?`<div class="d-note" dir="auto">${esc(f.notes.value.trim())}</div>`:""}
+    </div>`;
   keepArabicSpaces($("pdfDoc"));
   return $("pdfDoc");
 }
@@ -981,10 +1007,18 @@ $("qPdf").onclick = async ()=>{
     await loadScript(HTML2PDF_URL);
     const el = buildPdf(), filename = `${quote.quote_number}.pdf`;
     const blob = await html2pdf().set({
-      margin:[18,0,22,0], filename, image:{ type:"jpeg", quality:0.95 },
+      margin:[16,0,42,0], filename, image:{ type:"jpeg", quality:0.95 },
       html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff" },
       jsPDF:{ unit:"pt", format:"a4", orientation:"portrait" }, pagebreak:{ mode:["css","legacy"] }
-    }).from(el).outputPdf("blob");
+    }).from(el).toPdf().get("pdf").then(pdf=>{
+      const n = pdf.internal.getNumberOfPages(), W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight();
+      for(let i=1;i<=n;i++){
+        pdf.setPage(i); pdf.setDrawColor(40); pdf.setLineWidth(0.7); pdf.line(25, H-32, W-25, H-32);
+        pdf.setFont("helvetica","normal"); pdf.setFontSize(9);
+        pdf.setTextColor(30); pdf.text(COMPANY.tagline, 25, H-18);
+        pdf.setTextColor(110); pdf.text(`Page ${i} / ${n}`, W-25, H-18, { align:"right" });
+      }
+    }).outputPdf("blob");
     const file = new File([blob], filename, { type:"application/pdf" });
     if($("qForm").status.value==="draft"){ $("qForm").status.value = "sent"; await saveQuote(); }
     const r = await shareOrDownload(file);
