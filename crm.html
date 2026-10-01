@@ -17,6 +17,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-family:var(--font);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.55;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -122,7 +123,7 @@ tr.inactive td{color:var(--muted)}
 
 /* PDF template — rendered off-screen, captured by html2pdf (layout follows AIX's Odoo quotation) */
 #pdfHolder{position:fixed;left:-10000px;top:0}
-#pdfDoc{direction:ltr;text-align:left;width:794px;background:#fff;color:#1f1f1f;font-family:"Roboto","Helvetica Neue",Arial,sans-serif;font-size:12.5px;line-height:1.45;padding:0 0 10px}
+#pdfDoc{-webkit-text-size-adjust:100%;text-size-adjust:100%;direction:ltr;text-align:left;width:794px;background:#fff;color:#1f1f1f;font-family:"Roboto","Helvetica Neue",Arial,sans-serif;font-size:12.5px;line-height:1.45;padding:0 0 10px}
 #pdfDoc .d-band{display:flex;justify-content:space-between;align-items:flex-start;background:#eef6ee;padding:26px 34px 46px}
 #pdfDoc .d-band img{height:80px;display:block}
 #pdfDoc .d-mail{color:#1a3fd6;font-weight:700;font-size:12px;margin-top:10px}
@@ -138,7 +139,7 @@ tr.inactive td{color:var(--muted)}
 #pdfDoc .d-info b{display:block;color:#5cb85c;font-weight:500;font-size:12px}
 #pdfDoc .d-tbl{border:1px solid #3a8f2a;border-radius:8px;overflow:hidden}
 #pdfDoc table{width:100%;min-width:0;border-collapse:collapse}
-#pdfDoc th{background:#3a8f2a;color:#fff;font-weight:500;font-size:12.5px;padding:9px 7px;text-align:right;border:0}
+#pdfDoc th{background:#3a8f2a;color:#fff;font-weight:500;font-size:12.5px;padding:9px 7px;text-align:right;border:0;white-space:nowrap}
 #pdfDoc th:first-child{text-align:left}
 #pdfDoc td{padding:9px 7px;border-top:1px solid #a9adc1;border-left:1px solid #a9adc1;text-align:right;vertical-align:top;white-space:nowrap}
 #pdfDoc td:first-child{border-left:0;text-align:left;white-space:normal;width:100%}
@@ -1047,9 +1048,13 @@ $("qPdf").onclick = async ()=>{
   try {
     await loadScript(HTML2PDF_URL);
     const el = buildPdf(), filename = `${quote.quote_number}.pdf`;
+    // html2canvas offsets the capture by the page's scroll position (white space on top, rows cut off),
+    // so render from the top and put the user back where they were afterwards
+    const scrollBack = window.scrollY;
+    window.scrollTo(0, 0);
     const blob = await html2pdf().set({
       margin:[16,0,42,0], filename, image:{ type:"jpeg", quality:0.95 },
-      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff" },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff", scrollX:0, scrollY:0 },
       jsPDF:{ unit:"pt", format:"a4", orientation:"portrait" }, pagebreak:{ mode:["css","legacy"] }
     }).from(el).toPdf().get("pdf").then(pdf=>{
       const n = pdf.internal.getNumberOfPages(), W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight();
@@ -1059,7 +1064,7 @@ $("qPdf").onclick = async ()=>{
         pdf.setTextColor(30); pdf.text(COMPANY.tagline, 25, H-18);
         pdf.setTextColor(110); pdf.text(`Page ${i} / ${n}`, W-25, H-18, { align:"right" });
       }
-    }).outputPdf("blob");
+    }).outputPdf("blob").then(b=>{ window.scrollTo(0, scrollBack); return b; }, e=>{ window.scrollTo(0, scrollBack); throw e; });
     const file = new File([blob], filename, { type:"application/pdf" });
     if(quote.status==="draft"){
       const { error } = await sb.from("quotations").update({ status:"sent" }).eq("id",quote.id);
