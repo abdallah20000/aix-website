@@ -127,7 +127,6 @@ tr.inactive td{color:var(--muted)}
 #pdfDoc .d-title::before{content:"";position:absolute;left:-22px;top:0;bottom:0;width:44px;background:#fff;transform:skewX(-42deg)}
 #pdfDoc .d-body{padding:0 34px}
 #pdfDoc .d-cust{margin:18px 0 14px}
-#pdfDoc .d-cust .ph{color:#666;font-size:11.5px}
 #pdfDoc .d-info{display:flex;background:#f2f5f2;border-radius:8px;padding:10px 6px 9px;margin-bottom:18px}
 #pdfDoc .d-info div{flex:1;padding:0 6px}
 #pdfDoc .d-info b{display:block;color:#5cb85c;font-weight:500;font-size:12px}
@@ -570,7 +569,7 @@ async function openLead(id){
   current = leads.find(l=>l.id===id); if(!current) return;
   const f=$("leadForm");
   ["name","phone","area","source","client_type","status","budget","assigned_to","next_follow_up","notes"].forEach(k=>f[k].value = current[k] ?? "");
-  $("dTitle").textContent=current.name; $("delBtn").classList.remove("hidden"); $("fuBlock").classList.remove("hidden");
+  $("dTitle").textContent=current.name; $("delBtn").classList.toggle("hidden", !isAdmin); $("fuBlock").classList.remove("hidden");
   $("fuForm").reset(); setGcal(current); showDrawer(true); loadFollowUps(); loadQuotes();
 }
 
@@ -782,7 +781,7 @@ async function openQuote(id){
     $("tInstPct").value = 0; $("tDiscPct").value = 0;
   }
   $("qvTitle").textContent = quote.quote_number ? `عرض سعر ${quote.quote_number}` : "عرض سعر جديد";
-  $("qDel").classList.toggle("hidden", !quote.id);
+  $("qDel").classList.toggle("hidden", !quote.id || !isAdmin);
   $("pick").value = ""; $("pickRes").classList.add("hidden");
   fillBrands();
   quoteDirty = !quote.id; renderQuoteItems();
@@ -911,18 +910,16 @@ async function saveQuote(){
                          : await sb.from("quotations").insert(row).select("id,quote_number").single();
     if(res.error) throw res.error;
     quote.id = res.data.id; quote.quote_number = res.data.quote_number;
-    // replace the lines wholesale: simplest way to keep order, edits and deletions in sync
-    const del = await sb.from("quotation_items").delete().eq("quotation_id",quote.id);
-    if(del.error) throw del.error;
-    const ins = await sb.from("quotation_items").insert(items.map((i,n)=>({
-      quotation_id: quote.id, product_id: i.product_id, name: i.name.trim(), description: i.description || null,
+    // replace the lines wholesale in one transaction on the server (sales have no direct delete rights)
+    const rep = await sb.rpc("replace_quotation_items", { p_quote: quote.id, p_items: items.map((i,n)=>({
+      product_id: i.product_id, name: i.name.trim(), description: i.description || null,
       room: String(i.room||"").trim() || null, qty: Number(i.qty), unit_price: Number(i.unit_price)||0,
-      discount_pct: Math.min(Math.max(Number(i.discount_pct)||0,0),100), sort_order: n })));
-    if(ins.error) throw ins.error;
+      discount_pct: Math.min(Math.max(Number(i.discount_pct)||0,0),100), sort_order: n })) });
+    if(rep.error) throw rep.error;
   } catch(err){ toast("الحفظ فشل"); console.error(err); return false; }
   finally { $("qSave").disabled = false; }
   quote.items = items; quoteDirty = false;
-  $("qvTitle").textContent = `عرض سعر ${quote.quote_number}`; $("qDel").classList.remove("hidden");
+  $("qvTitle").textContent = `عرض سعر ${quote.quote_number}`; $("qDel").classList.toggle("hidden", !isAdmin);
   loadQuotes(); return true;
 }
 $("qForm").addEventListener("submit", async e=>{ e.preventDefault(); if(await saveQuote()) toast(`العرض ${quote.quote_number} اتحفظ ✓`); });
@@ -959,7 +956,7 @@ function buildPdf(){
     </div>
     <div class="d-titlerow"><div class="d-title">Quotation # ${esc(quote.quote_number)}</div></div>
     <div class="d-body">
-      <div class="d-cust"><div dir="auto">${esc(f.client_name.value)}</div>${current?.phone?`<div class="ph">${esc(current.phone)}</div>`:""}</div>
+      <div class="d-cust"><div dir="auto">${esc(f.client_name.value)}</div></div>
       <div class="d-info">
         <div><b>Quotation Date</b>${d(f.quote_date.value)}</div>
         <div><b>Expiration</b>${d(f.valid_until.value)}</div>
