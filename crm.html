@@ -41,6 +41,20 @@ header .who{font-size:13px;color:#bbb;display:flex;gap:12px;align-items:center}
 .ghost{background:transparent;border:1px solid #444;color:#fff;border-radius:6px;padding:6px 12px;font-size:13px}
 main{max-width:1180px;margin:0 auto;padding:20px}
 
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tabs button{border:0;background:none;padding:10px 16px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* products */
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;direction:ltr;unicode-bidi:isolate}
+.off{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:1px 8px;border-radius:4px;margin-inline-start:6px}
+tr.inactive td{color:var(--muted)}
+.edit-btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 12px;font-size:13px}
+.edit-btn:hover{border-color:var(--ink)}
+.f label.check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);margin:0}
+.f label.check input{width:18px;height:18px}
+
 /* pipeline bar */
 .pipe{display:flex;border:1px solid var(--ink);border-radius:8px;overflow:hidden;margin-bottom:18px}
 .pipe button{flex:1;min-width:0;border:0;border-inline-start:1px solid var(--line);background:var(--paper);padding:12px 8px;text-align:right}
@@ -150,6 +164,26 @@ tr.row:hover td{background:#fafafa}
     <div class="who"><a href="/inventory.html" class="admin-only hidden" style="color:#fff">المخزن</a><a href="/installs.html" class="admin-only hidden" style="color:#fff">التركيبات</a><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
   </header>
   <main>
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="tabLeads">العملاء</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="tabProducts">المنتجات</button>
+    </nav>
+
+    <section id="tabProducts" class="hidden">
+      <div class="tools">
+        <input id="pq" type="search" placeholder="دوّر باسم المنتج أو الكود">
+        <select id="pCat"><option value="">كل الأقسام</option></select>
+        <button class="primary hidden" id="newProduct">+ منتج جديد</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>الكود</th><th>المنتج</th><th>القسم</th><th>سعر العميل</th><th>سعر الديلر</th><th class="p-admin hidden"></th></tr></thead>
+          <tbody id="pRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tabLeads">
     <div class="pipe" id="pipe"></div>
     <div class="due hidden" id="due"><h3 id="dueTitle"></h3><ul id="dueList"></ul></div>
     <div class="tools">
@@ -168,6 +202,7 @@ tr.row:hover td{background:#fafafa}
         <tbody id="rows"></tbody>
       </table>
     </div>
+    </section>
   </main>
 </div>
 
@@ -209,6 +244,28 @@ tr.row:hover td{background:#fafafa}
       </form>
       <ul class="timeline" id="timeline"></ul>
     </div>
+  </div>
+</aside>
+
+<!-- PRODUCT DRAWER (admin only) -->
+<div class="shade hidden" id="pShade"></div>
+<aside class="drawer hidden" id="pDrawer" aria-modal="true" role="dialog">
+  <div class="drawer-head"><h2 id="pTitle">منتج جديد</h2><button class="x" id="pClose" aria-label="إغلاق">×</button></div>
+  <div class="drawer-body">
+    <form id="productForm">
+      <div class="grid">
+        <div class="f"><label>الكود</label><input name="code" dir="ltr"></div>
+        <div class="f"><label>القسم</label><select name="category" id="pCatSel"></select></div>
+        <div class="f full"><label>اسم المنتج *</label><input name="name" required></div>
+        <div class="f full"><label>الوصف</label><textarea name="description"></textarea></div>
+        <div class="f"><label>الماركة</label><input name="brand" dir="auto"></div>
+        <div class="f"></div>
+        <div class="f"><label>سعر العميل (جنيه)</label><input name="end_user_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr"></div>
+        <div class="f"><label>سعر الديلر (جنيه)</label><input name="dealer_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr"></div>
+        <div class="f full"><label class="check"><input name="active" type="checkbox" checked> متاح (Active)</label></div>
+      </div>
+      <div class="actions"><button class="primary" type="submit" id="pSaveBtn">حفظ</button></div>
+    </form>
   </div>
 </aside>
 
@@ -285,6 +342,9 @@ async function onSession(session){
     }
   }
   document.querySelectorAll(".admin-only").forEach(a=>a.classList.toggle("hidden", role !== "admin"));
+  isAdmin = role === "admin"; productsLoaded = false;
+  $("newProduct").classList.toggle("hidden", !isAdmin);
+  document.querySelectorAll(".p-admin").forEach(el=>el.classList.toggle("hidden", !isAdmin));
   $("login").classList.toggle("hidden", !!user);
   $("app").classList.toggle("hidden", !user);
   if(user){ $("userEmail").textContent = user.email; loadLeads(); }
@@ -401,6 +461,83 @@ $("fuForm").addEventListener("submit", async e=>{
   if(f.next.value) upd.next_follow_up=f.next.value;
   if(Object.keys(upd).length) await sb.from("leads").update(upd).eq("id",current.id);
   toast("المتابعة اتسجلت ✓"); await loadLeads(); openLead(current.id);
+});
+
+// ---------- TABS ----------
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>{
+    const on = x===b; x.setAttribute("aria-selected", on); $(x.dataset.tab).classList.toggle("hidden", !on);
+  });
+  if(b.dataset.tab==="tabProducts" && !productsLoaded) loadProducts();
+});
+
+// ---------- PRODUCTS ----------
+// only these columns are ever requested, so cost/supplier data can't reach the page
+const PRODUCT_COLS = "id,code,name,description,category,brand,end_user_price,dealer_price,active";
+const CATEGORIES = ["Switches & Sockets","Curtains","Sensors","Screens & Hubs","Locks","Intercom","Cameras",
+  "Network","Audio","Remotes","KNX","Gate","Electrical","Voice Assistants","Installation","Other"];
+let products = [], isAdmin = false, productsLoaded = false, currentProduct = null;
+
+$("pCat").innerHTML += CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
+$("pCatSel").innerHTML = CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
+
+async function loadProducts(){
+  $("pRows").innerHTML = `<tr><td colspan="6" class="empty">بيحمّل…</td></tr>`;
+  const { data, error } = await sb.from("products").select(PRODUCT_COLS).order("category").order("name");
+  if(error){ $("pRows").innerHTML=""; toast("مشكلة في تحميل المنتجات"); console.error(error); return; }
+  products = data; productsLoaded = true; renderProducts();
+}
+
+function renderProducts(){
+  const q=$("pq").value.trim().toLowerCase(), fc=$("pCat").value, cols = isAdmin ? 6 : 5;
+  const list = products.filter(p=>(!fc || p.category===fc) &&
+    (!q || [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))));
+  if(!list.length){ $("pRows").innerHTML = `<tr><td colspan="${cols}" class="empty">${products.length?"مفيش نتايج":"لسه مفيش منتجات"}</td></tr>`; return; }
+  $("pRows").innerHTML = list.map(p=>`<tr class="${p.active===false?"inactive":""}">
+      <td><span class="code">${esc(p.code||"—")}</span></td>
+      <td><div class="name">${esc(p.name)}${p.active===false?'<span class="off">موقوف</span>':""}</div>${p.brand?`<div class="sub" dir="auto">${esc(p.brand)}</div>`:""}</td>
+      <td>${esc(p.category||"—")}</td>
+      <td dir="ltr" style="text-align:right">${fmtMoney(p.end_user_price)}</td>
+      <td dir="ltr" style="text-align:right">${fmtMoney(p.dealer_price)}</td>
+      ${isAdmin?`<td><button class="edit-btn" data-id="${p.id}">تعديل</button></td>`:""}
+    </tr>`).join("");
+  if(isAdmin) $("pRows").querySelectorAll(".edit-btn").forEach(b=>b.onclick=()=>openProduct(b.dataset.id));
+}
+["pq","pCat"].forEach(id=>$(id).addEventListener("input",renderProducts));
+
+function showProductDrawer(on){ $("pDrawer").classList.toggle("hidden",!on); $("pShade").classList.toggle("hidden",!on); }
+$("pClose").onclick = $("pShade").onclick = ()=>showProductDrawer(false);
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") showProductDrawer(false); });
+
+function openProduct(id){
+  if(!isAdmin) return;
+  currentProduct = id ? products.find(p=>p.id===id) : null;
+  const f=$("productForm"); f.reset();
+  if(currentProduct){
+    ["code","name","description","brand","end_user_price","dealer_price"].forEach(k=>f[k].value = currentProduct[k] ?? "");
+    f.category.value = CATEGORIES.includes(currentProduct.category) ? currentProduct.category : "Other";
+    f.active.checked = currentProduct.active !== false;
+  } else { f.category.value = CATEGORIES[0]; f.active.checked = true; }
+  $("pTitle").textContent = currentProduct ? currentProduct.name : "منتج جديد";
+  showProductDrawer(true); f.name.focus();
+}
+$("newProduct").onclick = ()=>openProduct(null);
+
+$("productForm").addEventListener("submit", async e=>{
+  e.preventDefault(); if(!isAdmin) return; const f=e.target;
+  const num = v => v==="" ? null : Number(v);
+  const row = {
+    code:f.code.value.trim()||null, name:f.name.value.trim(), description:f.description.value.trim()||null,
+    category:f.category.value, brand:f.brand.value.trim()||null,
+    end_user_price:num(f.end_user_price.value), dealer_price:num(f.dealer_price.value), active:f.active.checked
+  };
+  $("pSaveBtn").disabled=true;
+  const res = currentProduct ? await sb.from("products").update(row).eq("id",currentProduct.id).select(PRODUCT_COLS).single()
+                             : await sb.from("products").insert(row).select(PRODUCT_COLS).single();
+  $("pSaveBtn").disabled=false;
+  if(res.error){ toast("الحفظ فشل"); console.error(res.error); return; }
+  toast(currentProduct ? "اتعدل ✓" : "المنتج اتضاف ✓");
+  showProductDrawer(false); loadProducts();
 });
 </script>
 </body>
