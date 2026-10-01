@@ -126,6 +126,7 @@ tr.inactive td{color:var(--muted)}
 #pdfDoc .d-band{display:flex;justify-content:space-between;align-items:flex-start;background:#eef6ee;padding:26px 34px 46px}
 #pdfDoc .d-band img{height:80px;display:block}
 #pdfDoc .d-mail{color:#1a3fd6;font-weight:700;font-size:12px;margin-top:10px}
+#pdfDoc .d-phone{font-weight:700;font-size:12px;margin-top:2px}
 #pdfDoc .d-addr{text-align:right;font-size:12.5px;line-height:1.55;padding-top:18px}
 #pdfDoc .d-titlerow{display:flex;justify-content:flex-end;margin-top:-34px;padding-right:34px}
 #pdfDoc .d-title{position:relative;background:#fff;color:#3a9a2a;font-size:24px;font-weight:500;padding:4px 0 2px 26px}
@@ -149,8 +150,8 @@ tr.inactive td{color:var(--muted)}
 #pdfDoc .d-total{display:flex;background:#3a8f2a;color:#fff;font-weight:700;border-radius:0 0 8px 8px;margin-top:0}
 #pdfDoc .d-total span{padding:8px 10px}
 #pdfDoc .d-total span+span{border-left:1px solid rgba(255,255,255,.35)}
-#pdfDoc .d-terms{margin-top:22px;white-space:pre-wrap;line-height:1.75}
-#pdfDoc .d-note{margin-top:14px;white-space:pre-wrap;color:#333}
+#pdfDoc .d-terms{margin-top:22px;white-space:pre-wrap;font-size:12.5px;line-height:1.75}
+#pdfDoc .d-note{margin-top:14px;white-space:pre-wrap;font-size:12.5px;color:#333}
 
 /* pipeline bar */
 .pipe{display:flex;border:1px solid var(--ink);border-radius:8px;overflow:hidden;margin-bottom:18px}
@@ -737,7 +738,7 @@ const DEFAULT_TERMS = [
   "Delivery : 2-4 weeks from PO & DP",
   "Warranty : 5 Years",
   "Thank you for your business!"].join("\n");
-const COMPANY = { name:"aix", tagline:"aix , Automated intelligence eXperience", email:"aix.s.egypt@gmail.com",
+const COMPANY = { name:"aix", tagline:"aix , Automated intelligence eXperience", email:"aix.s.egypt@gmail.com", phone:"+20 114 409 4440",
   address:["6th october","Giza","Egypt"], contact:"aix" };
 const HTML2PDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
 let quote = null;        // { id, quote_number, lead_id, items:[{product_id,name,description,room,qty,unit_price}] }
@@ -994,7 +995,7 @@ function buildPdf(){
                 (t.disc ? `<div class="s"><span>Discount (${n2(t.discPct)}%)</span><span>-${n2(t.disc)} LE</span></div>` : "");
   $("pdfDoc").innerHTML = `
     <div class="d-band">
-      <div><img src="/logo-black.png" alt="aix"><div class="d-mail">${COMPANY.email}</div></div>
+      <div><img src="/logo-black.png" alt="aix"><div class="d-mail">${COMPANY.email}</div><div class="d-phone">${COMPANY.phone}</div></div>
       <div class="d-addr">${COMPANY.address.join("<br>")}</div>
     </div>
     <div class="d-titlerow"><div class="d-title">Quotation # ${esc(quote.quote_number)}</div></div>
