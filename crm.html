@@ -55,6 +55,80 @@ tr.inactive td{color:var(--muted)}
 .f label.check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);margin:0}
 .f label.check input{width:18px;height:18px}
 
+/* quotations list (inside lead drawer) */
+.q-list{list-style:none;margin:0;padding:0}
+.q-list li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.q-list li:hover{background:#fafafa}
+.q-list .num{font-weight:700;direction:ltr;unicode-bidi:isolate}
+.q-st{font-size:11px;padding:1px 8px;border-radius:20px;border:1px solid var(--line)}
+.q-st.sent{border-color:var(--ink)}
+.q-st.accepted{background:var(--lime);border-color:var(--lime);font-weight:600}
+.q-st.rejected{color:var(--muted);text-decoration:line-through}
+
+/* quotation editor (full screen) */
+.qv{position:fixed;inset:0;background:#fff;z-index:12;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.qv-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 20px;background:var(--ink);color:#fff}
+.qv-head h2{margin:0;font-size:17px}
+.qv-head .x{color:#fff}
+.qv-body{overflow-y:auto;flex:1;padding:20px;max-width:1000px;width:100%;margin:0 auto}
+.qv-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.picker{position:relative;margin-bottom:10px;display:flex;gap:8px}
+.picker input{flex:1;padding:10px 12px;border:1px solid var(--ink);border-radius:6px}
+.picker .line-btn{white-space:nowrap}
+.line-btn{background:#fff;border:1px solid var(--ink);border-radius:6px;padding:9px 14px;font-weight:600}
+.pick-res{position:absolute;top:100%;inset-inline:0;background:#fff;border:1px solid var(--ink);border-top:0;max-height:300px;overflow-y:auto;z-index:3;border-radius:0 0 6px 6px}
+.pick-res button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:right;border:0;border-top:1px solid var(--line);background:#fff;padding:9px 12px}
+.pick-res button:hover,.pick-res button:focus{background:var(--soft)}
+.pick-res .p-name{font-weight:600}
+.pick-res .p-price{direction:ltr;white-space:nowrap}
+.q-items{width:100%;border-collapse:collapse;min-width:0}
+.q-items th{position:static}
+.q-items td{padding:6px 4px;vertical-align:top}
+.q-items input{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.q-items .c-room{width:16%}.q-items .c-qty{width:9%}.q-items .c-price{width:15%}.q-items .c-total{width:14%;text-align:left;padding-top:13px;font-weight:600;white-space:nowrap}
+.q-items .c-del{width:34px}
+.q-items .del{border:0;background:none;color:var(--red);font-size:20px;line-height:1;padding:6px}
+.q-items .desc{font-size:12px;color:var(--muted);margin-top:4px}
+.no-price{border-color:var(--red)!important}
+.q-totals{margin:18px 0 0 auto;width:min(360px,100%)}
+.q-totals div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.q-totals input{width:70px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;text-align:center}
+.q-totals .grand{font-size:20px;font-weight:700;border-bottom:2px solid var(--ink)}
+.qv-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 20px;border-top:1px solid var(--line);background:#fff}
+@media (max-width:720px){
+  .qv-meta{grid-template-columns:1fr 1fr}
+  .q-items thead{display:none}
+  .q-items tr{display:grid;grid-template-columns:1fr 70px 100px 34px;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .q-items td{padding:0;width:auto!important}
+  .q-items .c-name{grid-column:1/-1}
+  .q-items .c-room{grid-column:1/-1}
+  .q-items .c-total{grid-column:1/-2;padding-top:4px}
+}
+
+/* PDF template — rendered off-screen, captured by html2pdf */
+#pdfHolder{position:fixed;left:-10000px;top:0}
+#pdfDoc{width:794px;background:#fff;color:#000;font-family:var(--font);font-size:12px;line-height:1.5;padding:12px 44px 20px}
+#pdfDoc .d-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #000;padding-bottom:14px;margin-bottom:18px}
+#pdfDoc .d-head img{height:46px}
+#pdfDoc .d-co{font-size:11px;color:#444;text-align:left;direction:ltr}
+#pdfDoc h1{font-size:22px;margin:0 0 4px}
+#pdfDoc .d-info{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin-bottom:18px}
+#pdfDoc .d-info b{display:inline-block;min-width:90px;color:#555;font-weight:500}
+#pdfDoc table{width:100%;min-width:0;border-collapse:collapse}
+#pdfDoc th{background:#000;color:#fff;font-size:11px;padding:7px 8px;text-align:right}
+#pdfDoc td{padding:7px 8px;border-bottom:1px solid #ddd;vertical-align:top}
+#pdfDoc tr{page-break-inside:avoid}
+#pdfDoc .room-row td{background:#f2f2f2;font-weight:700}
+#pdfDoc .en{direction:ltr;text-align:left;unicode-bidi:isolate}
+#pdfDoc .d-desc{font-size:10px;color:#666}
+#pdfDoc .num{direction:ltr;text-align:left;white-space:nowrap}
+#pdfDoc .d-tot{width:300px;margin:16px 0 0 auto}
+#pdfDoc .d-tot div{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #ddd}
+#pdfDoc .d-tot .g{font-size:16px;font-weight:700;border-bottom:3px solid #000}
+#pdfDoc .d-terms{margin-top:22px;font-size:11px;white-space:pre-wrap;color:#333}
+#pdfDoc .d-foot{margin-top:26px;padding-top:10px;border-top:1px solid #ddd;font-size:10px;color:#777;text-align:center}
+
 /* pipeline bar */
 .pipe{display:flex;border:1px solid var(--ink);border-radius:8px;overflow:hidden;margin-bottom:18px}
 .pipe button{flex:1;min-width:0;border:0;border-inline-start:1px solid var(--line);background:var(--paper);padding:12px 8px;text-align:right}
@@ -233,6 +307,10 @@ tr.row:hover td{background:#fafafa}
     </form>
 
     <div id="fuBlock" class="hidden">
+      <div class="section-t">عروض الأسعار</div>
+      <button type="button" class="line-btn" id="newQuote">+ عرض سعر جديد</button>
+      <ul class="q-list" id="qList"></ul>
+
       <div class="section-t">سجل المتابعة</div>
       <form class="fu-add" id="fuForm">
         <textarea name="note" required placeholder="حصل إيه؟ مثلاً: كلمته، طلب زيارة يوم الخميس"></textarea>
@@ -246,6 +324,63 @@ tr.row:hover td{background:#fafafa}
     </div>
   </div>
 </aside>
+
+<!-- QUOTATION EDITOR -->
+<section class="qv hidden" id="qv" role="dialog" aria-modal="true">
+  <div class="qv-head"><h2 id="qvTitle">عرض سعر جديد</h2><button class="x" id="qvClose" aria-label="إغلاق">×</button></div>
+  <div class="qv-body">
+    <form id="qForm" autocomplete="off">
+      <div class="qv-meta">
+        <div class="f"><label>العميل</label><input name="client_name" required></div>
+        <div class="f"><label>نوع الأسعار</label>
+          <select name="client_type"><option value="end_customer">سعر العميل</option><option value="dealer">سعر الديلر</option></select></div>
+        <div class="f"><label>التاريخ</label><input name="quote_date" type="date" required></div>
+        <div class="f"><label>ساري لحد</label><input name="valid_until" type="date"></div>
+      </div>
+
+      <div class="picker">
+        <input id="pick" type="search" placeholder="ضيف منتج: اكتب الاسم أو الكود…" aria-label="بحث عن منتج">
+        <button type="button" class="line-btn" id="addCustom">+ بند يدوي</button>
+        <div class="pick-res hidden" id="pickRes"></div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="q-items">
+          <thead><tr><th class="c-name">البند</th><th class="c-room">المكان</th><th class="c-qty">العدد</th><th class="c-price">سعر الوحدة</th><th class="c-total">الإجمالي</th><th class="c-del"></th></tr></thead>
+          <tbody id="qRows"></tbody>
+        </table>
+      </div>
+
+      <div class="q-totals">
+        <div><span>إجمالي المنتجات</span><b id="tSub" dir="ltr">0</b></div>
+        <div><span>تركيب وبرمجة <input id="tInstPct" type="number" min="0" step="any" dir="ltr"> %</span><b id="tInst" dir="ltr">0</b></div>
+        <div><span>خصم <input id="tDiscPct" type="number" min="0" max="100" step="any" dir="ltr"> %</span><b id="tDisc" dir="ltr">0</b></div>
+        <div class="grand"><span>الإجمالي</span><b id="tTotal" dir="ltr">0</b></div>
+      </div>
+
+      <div class="grid" style="margin-top:18px">
+        <div class="f"><label>الحالة</label>
+          <select name="status"><option value="draft">مسودة</option><option value="sent">اتبعت</option><option value="accepted">اتقبل ✓</option><option value="rejected">اترفض</option></select></div>
+        <div class="f"></div>
+        <div class="f full"><label>ملاحظات للعميل</label><textarea name="notes"></textarea></div>
+        <div class="f full"><label>الشروط</label><textarea name="terms"></textarea></div>
+      </div>
+    </form>
+  </div>
+  <div class="qv-foot">
+    <button class="primary" type="submit" form="qForm" id="qSave">حفظ</button>
+    <button class="line-btn" type="button" id="qPdf">📄 PDF وابعته</button>
+    <button type="button" class="danger hidden" id="qDel">مسح العرض</button>
+  </div>
+</section>
+<datalist id="rooms">
+  <option>الصالة</option><option>الريسبشن</option><option>المطبخ</option><option>غرفة النوم الرئيسية</option>
+  <option>غرفة نوم 2</option><option>غرفة نوم 3</option><option>غرفة الأطفال</option><option>الحمام</option>
+  <option>المدخل</option><option>الجنينة</option><option>الروف</option><option>عام</option>
+</datalist>
+
+<!-- PDF TEMPLATE (filled by JS, captured off-screen) -->
+<div id="pdfHolder" aria-hidden="true"><div id="pdfDoc" dir="rtl"></div></div>
 
 <!-- PRODUCT DRAWER (admin only) -->
 <div class="shade hidden" id="pShade"></div>
@@ -415,7 +550,7 @@ async function openLead(id){
   const f=$("leadForm");
   ["name","phone","area","source","client_type","status","budget","assigned_to","next_follow_up","notes"].forEach(k=>f[k].value = current[k] ?? "");
   $("dTitle").textContent=current.name; $("delBtn").classList.remove("hidden"); $("fuBlock").classList.remove("hidden");
-  $("fuForm").reset(); setGcal(current); showDrawer(true); loadFollowUps();
+  $("fuForm").reset(); setGcal(current); showDrawer(true); loadFollowUps(); loadQuotes();
 }
 
 $("leadForm").addEventListener("submit", async e=>{
@@ -468,7 +603,7 @@ document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>{
     const on = x===b; x.setAttribute("aria-selected", on); $(x.dataset.tab).classList.toggle("hidden", !on);
   });
-  if(b.dataset.tab==="tabProducts" && !productsLoaded) loadProducts();
+  if(b.dataset.tab==="tabProducts") productsLoaded ? renderProducts() : loadProducts();
 });
 
 // ---------- PRODUCTS ----------
@@ -539,6 +674,280 @@ $("productForm").addEventListener("submit", async e=>{
   toast(currentProduct ? "اتعدل ✓" : "المنتج اتضاف ✓");
   showProductDrawer(false); loadProducts();
 });
+
+// ---------- QUOTATIONS ----------
+const Q_STATUS = { draft:"مسودة", sent:"اتبعت", accepted:"اتقبل ✓", rejected:"اترفض" };
+const DEFAULT_TERMS = "الأسعار بالجنيه المصري";
+const COMPANY = { name:"AIX Smart Home", phone:"0114 409 4440", web:"aixegypt.com", insta:"@aix.eg" };
+const HTML2PDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+let quote = null;        // { id, quote_number, lead_id, items:[{product_id,name,description,room,qty,unit_price}] }
+let quoteDirty = false, sharedFile = null;
+const money = n => Number(n||0).toLocaleString("en-US",{maximumFractionDigits:2});
+const addDays = (d,n) => { const x=new Date(d+"T00:00:00"); x.setDate(x.getDate()+n); return x.toLocaleDateString("en-CA"); };
+
+async function loadQuotes(){
+  const leadId = current?.id; if(!leadId) return;
+  $("qList").innerHTML = `<li class="sub">بيحمّل…</li>`;
+  const { data, error } = await sb.from("quotations").select("id,quote_number,quote_date,total,status")
+    .eq("lead_id",leadId).order("created_at",{ascending:false});
+  if(current?.id !== leadId) return;
+  if(error){ $("qList").innerHTML=""; toast("مشكلة في تحميل عروض الأسعار"); console.error(error); return; }
+  $("qList").innerHTML = data.length ? data.map(q=>`<li data-id="${q.id}">
+      <span><span class="num">${esc(q.quote_number)}</span> <span class="sub">· ${fmtDate(q.quote_date)}</span></span>
+      <span><b dir="ltr">${money(q.total)}</b> <span class="q-st ${esc(q.status)}">${esc(Q_STATUS[q.status]||q.status)}</span></span></li>`).join("")
+    : `<li class="sub" style="cursor:default">لسه مفيش عروض أسعار للعميل ده</li>`;
+  $("qList").querySelectorAll("li[data-id]").forEach(li=>li.onclick=()=>openQuote(li.dataset.id));
+}
+$("newQuote").onclick = ()=>openQuote(null);
+
+async function ensureCatalog(){
+  if(productsLoaded) return true;
+  const { data, error } = await sb.from("products").select(PRODUCT_COLS).order("category").order("name");
+  if(error){ toast("مشكلة في تحميل المنتجات"); console.error(error); return false; }
+  products = data; productsLoaded = true; return true;
+}
+const priceFor = (p, type) => type==="dealer" ? (p.dealer_price ?? p.end_user_price) : p.end_user_price;
+
+async function openQuote(id){
+  if(!current) return;
+  if(!await ensureCatalog()) return;
+  const f = $("qForm"); f.reset(); sharedFile = null; $("qPdf").textContent = "📄 PDF وابعته";
+  if(id){
+    const [{ data:q, error:e1 }, { data:items, error:e2 }] = await Promise.all([
+      sb.from("quotations").select("*").eq("id",id).single(),
+      sb.from("quotation_items").select("product_id,name,description,room,qty,unit_price,sort_order").eq("quotation_id",id).order("sort_order")
+    ]);
+    if(e1||e2){ toast("مشكلة في فتح العرض"); console.error(e1||e2); return; }
+    quote = { id:q.id, quote_number:q.quote_number, lead_id:q.lead_id, items:items.map(({sort_order,...i})=>i) };
+    ["client_name","client_type","quote_date","valid_until","status","notes","terms"].forEach(k=>f[k].value = q[k] ?? "");
+    $("tInstPct").value = q.install_pct; $("tDiscPct").value = q.discount_pct;
+  } else {
+    quote = { id:null, quote_number:null, lead_id:current.id, items:[] };
+    const today = todayStr();
+    f.client_name.value = current.name; f.client_type.value = current.client_type==="dealer" ? "dealer" : "end_customer";
+    f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft"; f.terms.value = DEFAULT_TERMS;
+    $("tInstPct").value = 10; $("tDiscPct").value = 0;
+  }
+  $("qvTitle").textContent = quote.quote_number ? `عرض سعر ${quote.quote_number}` : "عرض سعر جديد";
+  $("qDel").classList.toggle("hidden", !quote.id);
+  $("pick").value = ""; $("pickRes").classList.add("hidden");
+  quoteDirty = !quote.id; renderQuoteItems();
+  $("qv").classList.remove("hidden");
+}
+function closeQuote(){
+  if(quoteDirty && quote?.items.length && !confirm("فيه تعديلات ما اتحفظتش. تقفل من غير حفظ؟")) return;
+  $("qv").classList.add("hidden"); quote = null;
+}
+$("qvClose").onclick = closeQuote;
+// capture phase so Escape closes only the quote editor, not the lead drawer under it
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Escape" || $("qv").classList.contains("hidden")) return;
+  e.stopImmediatePropagation();
+  if(!$("pickRes").classList.contains("hidden")){ $("pickRes").classList.add("hidden"); return; }
+  closeQuote();
+}, true);
+
+function calcQuote(){
+  const sub = quote.items.reduce((s,i)=>s + (Number(i.qty)||0)*(Number(i.unit_price)||0), 0);
+  const instPct = Number($("tInstPct").value)||0, discPct = Number($("tDiscPct").value)||0;
+  const inst = Math.round(sub*instPct/100), disc = Math.round((sub+inst)*discPct/100);
+  return { sub, instPct, inst, discPct, disc, total: sub+inst-disc };
+}
+function updateTotals(){
+  const t = calcQuote();
+  $("tSub").textContent = money(t.sub); $("tInst").textContent = money(t.inst);
+  $("tDisc").textContent = t.disc ? "−"+money(t.disc) : "0"; $("tTotal").textContent = money(t.total);
+}
+["tInstPct","tDiscPct"].forEach(id=>$(id).addEventListener("input",()=>{ quoteDirty=true; updateTotals(); }));
+$("qForm").addEventListener("input", e=>{ if(e.target.name && e.target.name!=="client_type") quoteDirty=true; });
+
+function renderQuoteItems(){
+  $("qRows").innerHTML = quote.items.length ? quote.items.map((i,n)=>`<tr data-n="${n}">
+      <td class="c-name"><input data-k="name" value="${esc(i.name)}" dir="auto" aria-label="البند">${i.description?`<div class="desc" dir="auto">${esc(i.description)}</div>`:""}</td>
+      <td class="c-room"><input data-k="room" value="${esc(i.room||"")}" list="rooms" placeholder="المكان"></td>
+      <td class="c-qty"><input data-k="qty" type="number" min="0.01" step="any" inputmode="decimal" dir="ltr" value="${esc(i.qty)}" aria-label="العدد"></td>
+      <td class="c-price"><input data-k="unit_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr" value="${esc(i.unit_price ?? "")}" class="${i.unit_price?"":"no-price"}" aria-label="سعر الوحدة" placeholder="السعر"></td>
+      <td class="c-total" dir="ltr">${money((Number(i.qty)||0)*(Number(i.unit_price)||0))}</td>
+      <td class="c-del"><button type="button" class="del" aria-label="شيل البند">×</button></td>
+    </tr>`).join("")
+    : `<tr><td colspan="6" class="empty">دوّر على منتج من فوق وضيفه للعرض</td></tr>`;
+  $("qRows").querySelectorAll("tr[data-n]").forEach(tr=>{
+    const it = quote.items[+tr.dataset.n];
+    tr.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{
+      const k = inp.dataset.k; it[k] = (k==="qty"||k==="unit_price") ? (inp.value===""?null:Number(inp.value)) : inp.value;
+      if(k==="unit_price") inp.classList.toggle("no-price", !it.unit_price);
+      tr.querySelector(".c-total").textContent = money((Number(it.qty)||0)*(Number(it.unit_price)||0));
+      quoteDirty = true; updateTotals();
+    }));
+    tr.querySelector(".del").onclick = ()=>{ quote.items.splice(+tr.dataset.n,1); quoteDirty=true; renderQuoteItems(); };
+  });
+  updateTotals();
+}
+
+// product picker
+function showPicks(){
+  const q = $("pick").value.trim().toLowerCase(), type = $("qForm").client_type.value;
+  if(!q){ $("pickRes").classList.add("hidden"); return; }
+  const hits = products.filter(p=>p.active!==false && [p.name,p.code,p.brand].some(x=>String(x||"").toLowerCase().includes(q))).slice(0,30);
+  $("pickRes").innerHTML = hits.length ? hits.map(p=>{ const pr = priceFor(p,type);
+    return `<button type="button" data-id="${p.id}"><span><span class="p-name" dir="auto">${esc(p.name)}</span> <span class="sub">${esc(p.code||"")} · ${esc(p.category||"")}</span></span>
+      <span class="p-price">${pr!=null ? money(pr) : '<span class="sub">من غير سعر</span>'}</span></button>`; }).join("")
+    : `<div class="sub" style="padding:10px 12px">مفيش منتج بالاسم ده — استخدم «بند يدوي»</div>`;
+  $("pickRes").classList.remove("hidden");
+  $("pickRes").querySelectorAll("button").forEach(b=>b.onclick=()=>addProduct(b.dataset.id));
+}
+$("pick").addEventListener("input", showPicks);
+$("pick").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("pickRes").querySelector("button")?.click(); } });
+document.addEventListener("click", e=>{ if(!e.target.closest(".picker")) $("pickRes").classList.add("hidden"); });
+
+function addProduct(id){
+  const p = products.find(x=>x.id===id); if(!p) return;
+  const lastRoom = quote.items.length ? quote.items[quote.items.length-1].room : "";
+  const same = quote.items.find(i=>i.product_id===p.id && (i.room||"")===(lastRoom||""));
+  if(same) same.qty = (Number(same.qty)||0) + 1;
+  else quote.items.push({ product_id:p.id, name:p.name, description:p.description, room:lastRoom||"", qty:1, unit_price:priceFor(p,$("qForm").client_type.value) });
+  quoteDirty = true; $("pick").value = ""; $("pickRes").classList.add("hidden"); renderQuoteItems(); $("pick").focus();
+}
+$("addCustom").onclick = ()=>{
+  const lastRoom = quote.items.length ? quote.items[quote.items.length-1].room : "";
+  quote.items.push({ product_id:null, name:"", description:null, room:lastRoom||"", qty:1, unit_price:null });
+  quoteDirty = true; renderQuoteItems();
+  $("qRows").querySelector("tr:last-child input[data-k=name]")?.focus();
+};
+// switching end-user ↔ dealer re-prices the catalog lines (manual lines keep their price)
+$("qForm").client_type.addEventListener("change", ()=>{
+  const type = $("qForm").client_type.value; let n = 0;
+  quote.items.forEach(i=>{ const p = i.product_id && products.find(x=>x.id===i.product_id); if(p){ i.unit_price = priceFor(p,type); n++; } });
+  quoteDirty = true; renderQuoteItems(); if(n) toast("الأسعار اتحدثت حسب النوع");
+});
+
+async function saveQuote(){
+  const f = $("qForm");
+  if(!f.reportValidity()) return false;
+  const items = quote.items.filter(i=>String(i.name||"").trim());
+  if(!items.length){ toast("ضيف بند واحد على الأقل"); return false; }
+  if(items.some(i=>!(Number(i.qty)>0))){ toast("العدد لازم يكون أكبر من صفر"); return false; }
+  const t = calcQuote();
+  const row = {
+    lead_id: quote.lead_id, client_name: f.client_name.value.trim(), client_type: f.client_type.value,
+    quote_date: f.quote_date.value, valid_until: f.valid_until.value || null, status: f.status.value,
+    subtotal: t.sub, install_pct: t.instPct, install_amount: t.inst, discount_pct: t.discPct, discount_amount: t.disc, total: t.total,
+    notes: f.notes.value.trim() || null, terms: f.terms.value.trim() || null
+  };
+  if(!quote.id) row.created_by = user.email;
+  $("qSave").disabled = true;
+  try {
+    const res = quote.id ? await sb.from("quotations").update(row).eq("id",quote.id).select("id,quote_number").single()
+                         : await sb.from("quotations").insert(row).select("id,quote_number").single();
+    if(res.error) throw res.error;
+    quote.id = res.data.id; quote.quote_number = res.data.quote_number;
+    // replace the lines wholesale: simplest way to keep order, edits and deletions in sync
+    const del = await sb.from("quotation_items").delete().eq("quotation_id",quote.id);
+    if(del.error) throw del.error;
+    const ins = await sb.from("quotation_items").insert(items.map((i,n)=>({
+      quotation_id: quote.id, product_id: i.product_id, name: i.name.trim(), description: i.description || null,
+      room: String(i.room||"").trim() || null, qty: Number(i.qty), unit_price: Number(i.unit_price)||0, sort_order: n })));
+    if(ins.error) throw ins.error;
+  } catch(err){ toast("الحفظ فشل"); console.error(err); return false; }
+  finally { $("qSave").disabled = false; }
+  quote.items = items; quoteDirty = false;
+  $("qvTitle").textContent = `عرض سعر ${quote.quote_number}`; $("qDel").classList.remove("hidden");
+  loadQuotes(); return true;
+}
+$("qForm").addEventListener("submit", async e=>{ e.preventDefault(); if(await saveQuote()) toast(`العرض ${quote.quote_number} اتحفظ ✓`); });
+
+$("qDel").onclick = async ()=>{
+  if(!quote?.id || !confirm(`مسح عرض السعر ${quote.quote_number}؟`)) return;
+  const { error } = await sb.from("quotations").delete().eq("id",quote.id);
+  if(error){ toast("المسح فشل"); return; }
+  quoteDirty = false; closeQuote(); toast("العرض اتمسح"); loadQuotes();
+};
+
+// ---------- PDF ----------
+function loadScript(src){
+  return new Promise((ok,fail)=>{ if(window.html2pdf) return ok();
+    const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=()=>fail(new Error("load "+src)); document.head.appendChild(s); });
+}
+function buildPdf(){
+  const f = $("qForm"), t = calcQuote(), fmtD = d => d ? new Date(d+"T00:00:00").toLocaleDateString("ar-EG",{day:"numeric",month:"long",year:"numeric"}) : "—";
+  // keep rooms together, in the order they first appear
+  const order = [], groups = {};
+  quote.items.forEach(i=>{ const r = (i.room||"").trim(); if(!(r in groups)){ groups[r]=[]; order.push(r); } groups[r].push(i); });
+  const hasRooms = order.some(r=>r);
+  let n = 0;
+  const rows = order.map(r=>(hasRooms ? `<tr class="room-row"><td colspan="5">${esc(r||"عام")}</td></tr>` : "") +
+    groups[r].map(i=>`<tr><td class="num">${++n}</td>
+      <td><div dir="auto">${esc(i.name)}</div>${i.description?`<div class="d-desc" dir="auto">${esc(i.description)}</div>`:""}</td>
+      <td class="num">${money(i.qty)}</td><td class="num">${money(i.unit_price)}</td><td class="num">${money((Number(i.qty)||0)*(Number(i.unit_price)||0))}</td></tr>`).join("")).join("");
+  $("pdfDoc").innerHTML = `
+    <div class="d-head">
+      <div><h1>عرض سعر</h1><div class="num" style="text-align:right;font-size:14px;font-weight:700">${esc(quote.quote_number)}</div></div>
+      <div class="d-co"><img src="/logo.png" alt="AIX"><div>${COMPANY.name}</div><div>${COMPANY.phone} · ${COMPANY.web}</div><div>Instagram ${COMPANY.insta}</div></div>
+    </div>
+    <div class="d-info">
+      <div><b>العميل:</b> ${esc(f.client_name.value)}</div>
+      <div><b>التاريخ:</b> ${fmtD(f.quote_date.value)}</div>
+      <div><b>الموبايل:</b> <span class="en">${esc(current?.phone||"—")}</span></div>
+      <div><b>ساري لحد:</b> ${fmtD(f.valid_until.value)}</div>
+      ${current?.area?`<div><b>المنطقة:</b> ${esc(current.area)}</div>`:""}
+    </div>
+    <table><thead><tr><th style="width:30px">#</th><th>البند</th><th style="width:60px">العدد</th><th style="width:95px">سعر الوحدة</th><th style="width:105px">الإجمالي</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <div class="d-tot">
+      <div><span>إجمالي المنتجات</span><span class="num">${money(t.sub)}</span></div>
+      ${t.inst?`<div><span>تركيب وبرمجة (${money(t.instPct)}%)</span><span class="num">${money(t.inst)}</span></div>`:""}
+      ${t.disc?`<div><span>خصم (${money(t.discPct)}%)</span><span class="num">−${money(t.disc)}</span></div>`:""}
+      <div class="g"><span>الإجمالي (جنيه)</span><span class="num">${money(t.total)}</span></div>
+    </div>
+    ${f.notes.value.trim()?`<div class="d-terms"><b>ملاحظات</b>\n${esc(f.notes.value.trim())}</div>`:""}
+    ${f.terms.value.trim()?`<div class="d-terms"><b>الشروط</b>\n${esc(f.terms.value.trim())}</div>`:""}
+    <div class="d-foot">${COMPANY.name} · ${COMPANY.web} · ${COMPANY.phone}</div>`;
+  keepArabicSpaces($("pdfDoc"));
+  return $("pdfDoc");
+}
+// html2canvas draws Arabic word-by-word and drops the spaces between words. Joining words with
+// no-break spaces makes it draw whole phrases; a breakable gap every few words still lets long text wrap.
+function keepArabicSpaces(root){
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [];
+  while(walker.nextNode()) if(/[؀-ۿ]/.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    n.nodeValue = n.nodeValue.split("\n").map(line=>{
+      const w = line.split(/ +/), out = [];
+      for(let i=0;i<w.length;i+=5) out.push(w.slice(i,i+5).join(" "));
+      return out.join("  ");
+    }).join("\n");
+  });
+}
+async function shareOrDownload(file){
+  if(navigator.canShare && navigator.canShare({ files:[file] })){
+    try { await navigator.share({ files:[file], title:file.name }); return "shared"; }
+    catch(e){ if(e.name==="AbortError") return "cancelled"; if(e.name!=="NotAllowedError") console.error(e); }
+    return "needs-tap";   // the browser wants a fresh tap before sharing
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 30000);
+  return "downloaded";
+}
+$("qPdf").onclick = async ()=>{
+  if(sharedFile){ const r = await shareOrDownload(sharedFile); if(r!=="needs-tap"){ sharedFile=null; $("qPdf").textContent="📄 PDF وابعته"; } return; }
+  if(quoteDirty || !quote.id){ if(!await saveQuote()) return; }
+  const btn = $("qPdf"); btn.disabled = true; btn.textContent = "بيجهز الـ PDF…";
+  try {
+    await loadScript(HTML2PDF_URL);
+    const el = buildPdf(), filename = `${quote.quote_number}.pdf`;
+    const blob = await html2pdf().set({
+      margin:[18,0,22,0], filename, image:{ type:"jpeg", quality:0.95 },
+      html2canvas:{ scale:2, useCORS:true, backgroundColor:"#ffffff" },
+      jsPDF:{ unit:"pt", format:"a4", orientation:"portrait" }, pagebreak:{ mode:["css","legacy"] }
+    }).from(el).outputPdf("blob");
+    const file = new File([blob], filename, { type:"application/pdf" });
+    if($("qForm").status.value==="draft"){ $("qForm").status.value = "sent"; await saveQuote(); }
+    const r = await shareOrDownload(file);
+    if(r==="needs-tap"){ sharedFile = file; btn.textContent = "📤 اضغط عشان تبعته"; }
+    else { btn.textContent = "📄 PDF وابعته"; if(r==="downloaded") toast("الـ PDF اتنزل ✓"); }
+  } catch(err){ toast("مقدرتش أعمل الـ PDF"); console.error(err); btn.textContent = "📄 PDF وابعته"; }
+  finally { btn.disabled = false; }
+};
 </script>
 </body>
 </html>
