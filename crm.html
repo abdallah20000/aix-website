@@ -52,6 +52,11 @@ main{max-width:1180px;margin:0 auto;padding:20px}
 tr.inactive td{color:var(--muted)}
 .edit-btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 12px;font-size:13px}
 .edit-btn:hover{border-color:var(--ink)}
+.price-in{width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;text-align:left}
+.price-in:hover{border-color:#999}
+.price-in.saving{opacity:.5}
+.price-in.saved{border-color:var(--lime);background:#f4faea}
+.price-in.missing{border-color:var(--red)}
 .f label.check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);margin:0}
 .f label.check input{width:18px;height:18px}
 
@@ -632,13 +637,36 @@ function renderProducts(){
       <td><span class="code">${esc(p.code||"—")}</span></td>
       <td><div class="name">${esc(p.name)}${p.active===false?'<span class="off">موقوف</span>':""}</div>${p.brand?`<div class="sub" dir="auto">${esc(p.brand)}</div>`:""}</td>
       <td>${esc(p.category||"—")}</td>
-      <td dir="ltr" style="text-align:right">${fmtMoney(p.end_user_price)}</td>
-      <td dir="ltr" style="text-align:right">${fmtMoney(p.dealer_price)}</td>
+      ${isAdmin ? ["end_user_price","dealer_price"].map(k=>`<td><input class="price-in${p[k]==null&&k==="end_user_price"?" missing":""}" type="number" min="0" step="any" inputmode="decimal" dir="ltr"
+          data-id="${p.id}" data-k="${k}" value="${p[k] ?? ""}" placeholder="—" aria-label="${k==="dealer_price"?"سعر الديلر":"سعر العميل"} — ${esc(p.name)}"></td>`).join("")
+        : `<td dir="ltr" style="text-align:right">${fmtMoney(p.end_user_price)}</td>
+      <td dir="ltr" style="text-align:right">${fmtMoney(p.dealer_price)}</td>`}
       ${isAdmin?`<td><button class="edit-btn" data-id="${p.id}">تعديل</button></td>`:""}
     </tr>`).join("");
-  if(isAdmin) $("pRows").querySelectorAll(".edit-btn").forEach(b=>b.onclick=()=>openProduct(b.dataset.id));
+  if(isAdmin){
+    $("pRows").querySelectorAll(".edit-btn").forEach(b=>b.onclick=()=>openProduct(b.dataset.id));
+    $("pRows").querySelectorAll(".price-in").forEach(inp=>{
+      inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); inp.blur(); } if(e.key==="Escape"){ inp.value = products.find(x=>x.id===inp.dataset.id)?.[inp.dataset.k] ?? ""; inp.blur(); } });
+      inp.addEventListener("change", ()=>savePrice(inp));
+    });
+  }
 }
 ["pq","pCat"].forEach(id=>$(id).addEventListener("input",renderProducts));
+
+// admin: change a price straight from the table — saved as soon as the field loses focus
+async function savePrice(inp){
+  const p = products.find(x=>x.id===inp.dataset.id), k = inp.dataset.k; if(!p) return;
+  const v = inp.value.trim()==="" ? null : Number(inp.value);
+  if(v!==null && !(v>=0)){ toast("السعر لازم يكون رقم"); inp.value = p[k] ?? ""; return; }
+  if(v === (p[k]==null ? null : Number(p[k]))) return;
+  inp.classList.add("saving"); inp.classList.remove("saved");
+  const { error } = await sb.from("products").update({ [k]: v }).eq("id",p.id);
+  inp.classList.remove("saving");
+  if(error){ toast("السعر ما اتحفظش"); console.error(error); inp.value = p[k] ?? ""; return; }
+  p[k] = v; inp.classList.add("saved"); inp.classList.toggle("missing", k==="end_user_price" && v===null);
+  setTimeout(()=>inp.classList.remove("saved"), 1500);
+  toast(`${p.name}: ${v===null ? "اتشال السعر" : money(v)+" ✓"}`);
+}
 
 function showProductDrawer(on){ $("pDrawer").classList.toggle("hidden",!on); $("pShade").classList.toggle("hidden",!on); }
 $("pClose").onclick = $("pShade").onclick = ()=>showProductDrawer(false);
