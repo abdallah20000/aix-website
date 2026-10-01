@@ -69,6 +69,11 @@ tr.inactive td{color:var(--muted)}
 .q-st.sent{border-color:var(--ink)}
 .q-st.accepted{background:var(--lime);border-color:var(--lime);font-weight:600}
 .q-st.rejected{color:var(--muted);text-decoration:line-through}
+.q-st.del{border-color:var(--red);color:var(--red);font-weight:600}
+.q-lock{display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:1px solid var(--ink);border-inline-start-width:4px;background:var(--soft);padding:12px 14px;border-radius:6px;margin-bottom:16px}
+.q-lock span{flex:1 1 260px;font-size:14px}
+.q-lock.req{border-color:var(--red)}
+.qv input:disabled,.qv select:disabled,.qv textarea:disabled{background:var(--soft);color:#555;border-color:var(--line);cursor:not-allowed}
 
 /* quotation editor (full screen) */
 .qv{position:fixed;inset:0;background:#fff;z-index:12;display:flex;flex-direction:column;
@@ -347,6 +352,8 @@ tr.row:hover td{background:#fafafa}
 <section class="qv hidden" id="qv" role="dialog" aria-modal="true">
   <div class="qv-head"><h2 id="qvTitle">عرض سعر جديد</h2><button class="x" id="qvClose" aria-label="إغلاق">×</button></div>
   <div class="qv-body">
+    <div class="q-lock hidden" id="qLock"><span id="qLockMsg"></span>
+      <button type="button" class="line-btn hidden" id="qReqDel">🗑 اطلب من الأدمن يمسحه</button></div>
     <form id="qForm" autocomplete="off">
       <div class="qv-meta">
         <div class="f"><label>العميل</label><input name="client_name" required></div>
@@ -389,6 +396,7 @@ tr.row:hover td{background:#fafafa}
   <div class="qv-foot">
     <button class="primary" type="submit" form="qForm" id="qSave">حفظ</button>
     <button class="line-btn" type="button" id="qPdf">📄 PDF وابعته</button>
+    <button class="line-btn hidden" type="button" id="qCopy">عرض جديد بنفس البنود</button>
     <button type="button" class="danger hidden" id="qDel">مسح العرض</button>
   </div>
 </section>
@@ -740,13 +748,13 @@ const addDays = (d,n) => { const x=new Date(d+"T00:00:00"); x.setDate(x.getDate(
 async function loadQuotes(){
   const leadId = current?.id; if(!leadId) return;
   $("qList").innerHTML = `<li class="sub">بيحمّل…</li>`;
-  const { data, error } = await sb.from("quotations").select("id,quote_number,quote_date,total,status")
+  const { data, error } = await sb.from("quotations").select("id,quote_number,quote_date,total,status,delete_requested_at")
     .eq("lead_id",leadId).order("created_at",{ascending:false});
   if(current?.id !== leadId) return;
   if(error){ $("qList").innerHTML=""; toast("مشكلة في تحميل عروض الأسعار"); console.error(error); return; }
   $("qList").innerHTML = data.length ? data.map(q=>`<li data-id="${q.id}">
       <span><span class="num">${esc(q.quote_number)}</span> <span class="sub">· ${fmtDate(q.quote_date)}</span></span>
-      <span><b dir="ltr">${money(q.total)}</b> <span class="q-st ${esc(q.status)}">${esc(Q_STATUS[q.status]||q.status)}</span></span></li>`).join("")
+      <span><b dir="ltr">${money(q.total)}</b> <span class="q-st ${esc(q.status)}">${esc(Q_STATUS[q.status]||q.status)}</span>${q.delete_requested_at?' <span class="q-st del">مطلوب مسحه</span>':""}</span></li>`).join("")
     : `<li class="sub" style="cursor:default">لسه مفيش عروض أسعار للعميل ده</li>`;
   $("qList").querySelectorAll("li[data-id]").forEach(li=>li.onclick=()=>openQuote(li.dataset.id));
 }
@@ -770,11 +778,12 @@ async function openQuote(id){
       sb.from("quotation_items").select("product_id,name,description,room,qty,unit_price,discount_pct,sort_order").eq("quotation_id",id).order("sort_order")
     ]);
     if(e1||e2){ toast("مشكلة في فتح العرض"); console.error(e1||e2); return; }
-    quote = { id:q.id, quote_number:q.quote_number, lead_id:q.lead_id, items:items.map(({sort_order,...i})=>i) };
+    quote = { id:q.id, quote_number:q.quote_number, lead_id:q.lead_id, status:q.status, items:items.map(({sort_order,...i})=>i),
+      delete_requested_by:q.delete_requested_by, delete_requested_at:q.delete_requested_at };
     ["client_name","client_type","quote_date","valid_until","status","notes","terms"].forEach(k=>f[k].value = q[k] ?? "");
     $("tInstPct").value = q.install_pct; $("tDiscPct").value = q.discount_pct;
   } else {
-    quote = { id:null, quote_number:null, lead_id:current.id, items:[] };
+    quote = { id:null, quote_number:null, lead_id:current.id, status:"draft", items:[] };
     const today = todayStr();
     f.client_name.value = current.name; f.client_type.value = current.client_type==="dealer" ? "dealer" : "end_customer";
     f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft"; f.terms.value = DEFAULT_TERMS;
@@ -836,7 +845,7 @@ function renderQuoteItems(){
     }));
     tr.querySelector(".del").onclick = ()=>{ quote.items.splice(+tr.dataset.n,1); quoteDirty=true; renderQuoteItems(); };
   });
-  updateTotals();
+  updateTotals(); applyLock();
 }
 
 // product picker
@@ -918,9 +927,9 @@ async function saveQuote(){
     if(rep.error) throw rep.error;
   } catch(err){ toast("الحفظ فشل"); console.error(err); return false; }
   finally { $("qSave").disabled = false; }
-  quote.items = items; quoteDirty = false;
+  quote.items = items; quote.status = f.status.value; quoteDirty = false;
   $("qvTitle").textContent = `عرض سعر ${quote.quote_number}`; $("qDel").classList.toggle("hidden", !isAdmin);
-  loadQuotes(); return true;
+  applyLock(); loadQuotes(); return true;
 }
 $("qForm").addEventListener("submit", async e=>{ e.preventDefault(); if(await saveQuote()) toast(`العرض ${quote.quote_number} اتحفظ ✓`); });
 
@@ -929,6 +938,40 @@ $("qDel").onclick = async ()=>{
   const { error } = await sb.from("quotations").delete().eq("id",quote.id);
   if(error){ toast("المسح فشل"); return; }
   quoteDirty = false; closeQuote(); toast("العرض اتمسح"); loadQuotes();
+};
+
+// a sent quotation is read-only for sales: they make a new one and ask an admin to delete the old
+function applyLock(){
+  if(!quote) return;
+  const locked = !!quote.id && quote.status !== "draft" && !isAdmin, req = !!quote.delete_requested_at;
+  $("qForm").querySelectorAll("input,select,textarea").forEach(el=>el.disabled = locked);
+  $("qRows").querySelectorAll(".del").forEach(el=>el.classList.toggle("hidden", locked));
+  ["pick","qBrand","addCustom","tInstPct","tDiscPct"].forEach(id=>$(id).disabled = locked);
+  $("qSave").classList.toggle("hidden", locked);
+  $("qCopy").classList.toggle("hidden", !quote.id);
+  const by = (quote.delete_requested_by||"").split("@")[0];
+  $("qLock").classList.toggle("hidden", !locked && !(isAdmin && req));
+  $("qLock").classList.toggle("req", req);
+  $("qLockMsg").textContent = req
+    ? (isAdmin ? `${by} طلب مسح العرض ده — امسحه من زرار «مسح العرض» تحت.` : "طلبت مسح العرض ده، والأدمن هيمسحه.")
+    : "العرض ده اتبعت للعميل، فمش ممكن يتعدل. لو محتاج تغيّر حاجة، اعمل «عرض جديد بنفس البنود» واطلب من الأدمن يمسح القديم.";
+  $("qReqDel").classList.toggle("hidden", !locked || req);
+}
+$("qReqDel").onclick = async ()=>{
+  if(!quote?.id || !confirm(`تبعت للأدمن طلب يمسح العرض ${quote.quote_number}؟`)) return;
+  const { error } = await sb.rpc("request_quote_deletion", { p_quote: quote.id });
+  if(error){ toast("الطلب ما اتبعتش"); console.error(error); return; }
+  quote.delete_requested_at = new Date().toISOString(); quote.delete_requested_by = user.email;
+  applyLock(); loadQuotes(); toast("الطلب اتبعت للأدمن ✓");
+};
+$("qCopy").onclick = ()=>{
+  if(!quote) return;
+  const from = quote.quote_number, f = $("qForm"), today = todayStr();
+  quote = { id:null, quote_number:null, lead_id:quote.lead_id, status:"draft", items:quote.items.map(i=>({...i})) };
+  f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft";
+  $("qvTitle").textContent = `عرض سعر جديد (من ${from})`; $("qDel").classList.add("hidden");
+  sharedFile = null; $("qPdf").textContent = "📄 PDF وابعته";
+  quoteDirty = true; renderQuoteItems(); toast("نسخة جديدة — عدّل واحفظ");
 };
 
 // ---------- PDF ----------
@@ -1017,7 +1060,10 @@ $("qPdf").onclick = async ()=>{
       }
     }).outputPdf("blob");
     const file = new File([blob], filename, { type:"application/pdf" });
-    if($("qForm").status.value==="draft"){ $("qForm").status.value = "sent"; await saveQuote(); }
+    if(quote.status==="draft"){
+      const { error } = await sb.from("quotations").update({ status:"sent" }).eq("id",quote.id);
+      if(!error){ quote.status = "sent"; $("qForm").status.value = "sent"; applyLock(); loadQuotes(); }
+    }
     const r = await shareOrDownload(file);
     if(r==="needs-tap"){ sharedFile = file; btn.textContent = "📤 اضغط عشان تبعته"; }
     else { btn.textContent = "📄 PDF وابعته"; if(r==="downloaded") toast("الـ PDF اتنزل ✓"); }
