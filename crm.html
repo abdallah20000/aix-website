@@ -293,6 +293,7 @@ tr.row:hover td{background:#fafafa}
         <option value="dealer">ديلر</option>
       </select>
       <select id="fSource"><option value="">كل المصادر</option></select>
+      <select id="fOwner" class="admin-only hidden"><option value="">كل الموظفين</option></select>
       <button class="primary" id="newLead">+ عميل جديد</button>
     </div>
     <div class="tbl-wrap">
@@ -519,7 +520,14 @@ async function onSession(session){
 async function loadLeads(){
   const { data, error } = await sb.from("leads").select("*").order("created_at",{ascending:false});
   if(error){ toast("مشكلة في تحميل العملاء"); console.error(error); return; }
-  leads = data; render();
+  leads = data;
+  // admins see every lead; this lists who added them so they can filter per salesperson
+  const owners = [...new Set(leads.map(l=>l.created_by).filter(Boolean))].sort();
+  const sel = $("fOwner"), keep = sel.value;
+  sel.innerHTML = `<option value="">كل الموظفين</option>` + owners.map(o=>`<option value="${esc(o)}">${esc(o.split("@")[0])}</option>`).join("")
+    + (leads.some(l=>!l.created_by) ? `<option value="-">قبل التقسيم</option>` : "");
+  sel.value = [...sel.options].some(o=>o.value===keep) ? keep : "";
+  render();
 }
 
 function render(){
@@ -541,9 +549,10 @@ function render(){
   $("dueList").querySelectorAll("button").forEach(b=>b.onclick=()=>openLead(b.dataset.id));
 
   // table
-  const q = $("q").value.trim().toLowerCase(), ft=$("fType").value, fs=$("fSource").value;
+  const q = $("q").value.trim().toLowerCase(), ft=$("fType").value, fs=$("fSource").value, fo=$("fOwner").value;
   const list = leads.filter(l=>
     (!statusFilter || l.status===statusFilter) && (!ft || l.client_type===ft) && (!fs || l.source===fs) &&
+    (!fo || (fo==="-" ? !l.created_by : l.created_by===fo)) &&
     (!q || [l.name,l.phone,l.area].some(x=>String(x||"").toLowerCase().includes(q))));
   if(!list.length){ $("rows").innerHTML = `<tr><td colspan="8" class="empty">${leads.length?"مفيش نتايج بالفلتر ده":"لسه مفيش عملاء — اضغط «عميل جديد» وابدأ"}</td></tr>`; return; }
   $("rows").innerHTML = list.map(l=>{
@@ -555,13 +564,13 @@ function render(){
       <td><span class="tag st-${esc(l.status)}">${esc(sLabel(l.status))}</span></td>
       <td dir="ltr" style="text-align:right">${fmtMoney(l.budget)}</td>
       <td class="${cls}">${fmtDate(d)}</td>
-      <td>${esc(l.assigned_to||"—")}</td>
+      <td>${esc(l.assigned_to||"—")}${isAdmin && l.created_by ? `<div class="sub">أضافه: ${esc(l.created_by.split("@")[0])}</div>` : ""}</td>
       <td style="white-space:nowrap"><a class="icon-link" href="tel:${esc(l.phone)}" title="اتصال" onclick="event.stopPropagation()">☎</a>
           <a class="icon-link" href="${waLink(l.phone)}" target="_blank" rel="noopener" title="واتساب" onclick="event.stopPropagation()">✆</a></td>
     </tr>`;}).join("");
   $("rows").querySelectorAll("tr.row").forEach(r=>r.onclick=()=>openLead(r.dataset.id));
 }
-["q","fType","fSource"].forEach(id=>$(id).addEventListener("input",render));
+["q","fType","fSource","fOwner"].forEach(id=>$(id).addEventListener("input",render));
 
 // ---------- DRAWER ----------
 function showDrawer(on){ $("drawer").classList.toggle("hidden",!on); $("shade").classList.toggle("hidden",!on); }
