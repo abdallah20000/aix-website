@@ -53,6 +53,17 @@ main{max-width:1180px;margin:0 auto;padding:20px}
 tr.inactive td{color:var(--muted)}
 .edit-btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 12px;font-size:13px}
 .edit-btn:hover{border-color:var(--ink)}
+.p-wrap{display:flex;align-items:center;gap:10px}
+.pthumb{width:40px;height:40px;flex:0 0 40px;object-fit:contain;border:1px solid var(--line);border-radius:6px;background:#fff}
+.pthumb.none{display:grid;place-items:center;color:#bbb;font-size:16px}
+.img-box{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.img-box img,.img-box .ph{width:96px;height:96px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff}
+.img-box .ph{display:grid;place-items:center;color:#aaa;font-size:12px}
+.img-box .btns{display:flex;flex-direction:column;gap:8px}
+.img-box label.line-btn{display:inline-block;cursor:pointer;text-align:center}
+.img-box input[type=file]{display:none}
+.q-items .c-name .q-row-name{display:flex;gap:8px;align-items:center}
+.q-items .c-name .pthumb{width:34px;height:34px;flex-basis:34px}
 .price-in{width:110px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;text-align:left}
 .price-in:hover{border-color:#999}
 .price-in.saving{opacity:.5}
@@ -143,6 +154,8 @@ tr.inactive td{color:var(--muted)}
 #pdfDoc th:first-child{text-align:left}
 #pdfDoc td{padding:9px 7px;border-top:1px solid #a9adc1;border-left:1px solid #a9adc1;text-align:right;vertical-align:top;white-space:nowrap}
 #pdfDoc td:first-child{border-left:0;text-align:left;white-space:normal;width:100%}
+#pdfDoc .d-prod{display:flex;align-items:center;gap:10px}
+#pdfDoc .d-prod img{width:42px;height:42px;object-fit:contain;flex:0 0 42px}
 #pdfDoc td.amt{background:#f1f2f5}
 #pdfDoc tr{page-break-inside:avoid}
 #pdfDoc .room-row td{background:#f6f8f6;font-weight:700;text-align:left;color:#3a8f2a}
@@ -428,6 +441,10 @@ tr.row:hover td{background:#fafafa}
         <div class="f"></div>
         <div class="f"><label>سعر العميل (جنيه)</label><input name="end_user_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr"></div>
         <div class="f"><label>سعر الديلر (جنيه)</label><input name="dealer_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr"></div>
+        <div class="f full"><label>صورة المنتج</label>
+          <div class="img-box"><img id="pImg" class="hidden" alt=""><div id="pImgPh" class="ph">من غير صورة</div>
+            <div class="btns"><label class="line-btn">📷 اختار صورة<input type="file" id="pImgFile" accept="image/*"></label>
+              <button type="button" class="danger hidden" id="pImgDel" style="margin:0">شيل الصورة</button></div></div></div>
         <div class="f full"><label class="check"><input name="active" type="checkbox" checked> متاح (Active)</label></div>
       </div>
       <div class="actions"><button class="primary" type="submit" id="pSaveBtn">حفظ</button></div>
@@ -647,10 +664,13 @@ document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
 
 // ---------- PRODUCTS ----------
 // only these columns are ever requested, so cost/supplier data can't reach the page
-const PRODUCT_COLS = "id,code,name,description,category,brand,end_user_price,dealer_price,active";
+const PRODUCT_COLS = "id,code,name,description,category,brand,end_user_price,dealer_price,active,image_url";
+const IMG_BUCKET = "product-images";
 const CATEGORIES = ["Switches & Sockets","Curtains","Sensors","Screens & Hubs","Locks","Intercom","Cameras",
   "Network","Audio","Remotes","KNX","Gate","Electrical","Voice Assistants","Installation","Other"];
-let products = [], isAdmin = false, productsLoaded = false, currentProduct = null;
+let products = [], isAdmin = false, productsLoaded = false, currentProduct = null, pendingImg = null, removeImg = false;
+const thumb = url => url ? `<img class="pthumb" src="${esc(url)}" alt="" loading="lazy">` : `<span class="pthumb none">▢</span>`;
+const productImage = id => id ? (products.find(p=>p.id===id)?.image_url || null) : null;
 
 $("pCat").innerHTML += CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
 $("pCatSel").innerHTML = CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
@@ -669,7 +689,7 @@ function renderProducts(){
   if(!list.length){ $("pRows").innerHTML = `<tr><td colspan="${cols}" class="empty">${products.length?"مفيش نتايج":"لسه مفيش منتجات"}</td></tr>`; return; }
   $("pRows").innerHTML = list.map(p=>`<tr class="${p.active===false?"inactive":""}">
       <td><span class="code">${esc(p.code||"—")}</span></td>
-      <td><div class="name">${esc(p.name)}${p.active===false?'<span class="off">موقوف</span>':""}</div>${p.brand?`<div class="sub" dir="auto">${esc(p.brand)}</div>`:""}</td>
+      <td><div class="p-wrap">${thumb(p.image_url)}<div><div class="name">${esc(p.name)}${p.active===false?'<span class="off">موقوف</span>':""}</div>${p.brand?`<div class="sub" dir="auto">${esc(p.brand)}</div>`:""}</div></div></td>
       <td>${esc(p.category||"—")}</td>
       ${isAdmin ? ["end_user_price","dealer_price"].map(k=>`<td><input class="price-in${p[k]==null&&k==="end_user_price"?" missing":""}" type="number" min="0" step="any" inputmode="decimal" dir="ltr"
           data-id="${p.id}" data-k="${k}" value="${p[k] ?? ""}" placeholder="—" aria-label="${k==="dealer_price"?"سعر الديلر":"سعر العميل"} — ${esc(p.name)}"></td>`).join("")
@@ -715,11 +735,32 @@ function openProduct(id){
     f.category.value = CATEGORIES.includes(currentProduct.category) ? currentProduct.category : "Other";
     f.active.checked = currentProduct.active !== false;
   } else { f.category.value = CATEGORIES[0]; f.active.checked = true; }
+  pendingImg = null; removeImg = false; showImg(currentProduct?.image_url || null);
   $("brandList").innerHTML = [...new Set(products.map(p=>p.brand).filter(Boolean))].map(b=>`<option>${esc(b)}</option>`).join("");
   $("pTitle").textContent = currentProduct ? currentProduct.name : "منتج جديد";
   showProductDrawer(true); f.name.focus();
 }
 $("newProduct").onclick = ()=>openProduct(null);
+
+function showImg(src){
+  $("pImg").classList.toggle("hidden", !src); $("pImgPh").classList.toggle("hidden", !!src);
+  if(src) $("pImg").src = src; $("pImgDel").classList.toggle("hidden", !src);
+}
+// shrink photos before upload so quotes stay light (max 600px, JPEG)
+async function shrinkImage(file){
+  const img = await new Promise((ok,fail)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=fail; i.src=URL.createObjectURL(file); });
+  const k = Math.min(1, 600/Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth*k); c.height = Math.round(img.naturalHeight*k);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
+  URL.revokeObjectURL(img.src);
+  return await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.85));
+}
+$("pImgFile").addEventListener("change", async e=>{
+  const file = e.target.files[0]; e.target.value = ""; if(!file) return;
+  try { pendingImg = await shrinkImage(file); removeImg = false; showImg(URL.createObjectURL(pendingImg)); }
+  catch(err){ toast("الصورة دي مش مدعومة — جرب صورة JPG أو PNG"); console.error(err); }
+});
+$("pImgDel").onclick = ()=>{ pendingImg = null; removeImg = true; showImg(null); };
 
 $("productForm").addEventListener("submit", async e=>{
   e.preventDefault(); if(!isAdmin) return; const f=e.target;
@@ -734,6 +775,19 @@ $("productForm").addEventListener("submit", async e=>{
                              : await sb.from("products").insert(row).select(PRODUCT_COLS).single();
   $("pSaveBtn").disabled=false;
   if(res.error){ toast("الحفظ فشل"); console.error(res.error); return; }
+  if(pendingImg || removeImg){
+    let url = null;
+    if(pendingImg){
+      const path = `${res.data.id}.jpg`;
+      const up = await sb.storage.from(IMG_BUCKET).upload(path, pendingImg, { contentType:"image/jpeg", upsert:true });
+      if(up.error){ toast("المنتج اتحفظ بس الصورة ما اترفعتش"); console.error(up.error); }
+      else url = sb.storage.from(IMG_BUCKET).getPublicUrl(path).data.publicUrl + "?v=" + Date.now();
+    }
+    if(url || removeImg){
+      const { error } = await sb.from("products").update({ image_url: url }).eq("id", res.data.id);
+      if(error){ toast("الصورة ما اتحفظتش"); console.error(error); }
+    }
+  }
   toast(currentProduct ? "اتعدل ✓" : "المنتج اتضاف ✓");
   showProductDrawer(false); loadProducts();
 });
@@ -837,7 +891,7 @@ $("qForm").addEventListener("input", e=>{ if(e.target.name && e.target.name!=="c
 
 function renderQuoteItems(){
   $("qRows").innerHTML = quote.items.length ? quote.items.map((i,n)=>`<tr data-n="${n}">
-      <td class="c-name"><input data-k="name" value="${esc(i.name)}" dir="auto" aria-label="البند">${i.description?`<div class="desc" dir="auto">${esc(i.description)}</div>`:""}</td>
+      <td class="c-name"><div class="q-row-name">${i.product_id ? thumb(productImage(i.product_id)) : ""}<input data-k="name" value="${esc(i.name)}" dir="auto" aria-label="البند"></div>${i.description?`<div class="desc" dir="auto">${esc(i.description)}</div>`:""}</td>
       <td class="c-room"><input data-k="room" value="${esc(i.room||"")}" list="rooms" placeholder="المكان"></td>
       <td class="c-qty"><input data-k="qty" type="number" min="0.01" step="any" inputmode="decimal" dir="ltr" value="${esc(i.qty)}" aria-label="العدد"></td>
       <td class="c-price"><input data-k="unit_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr" value="${esc(i.unit_price ?? "")}" class="${i.unit_price?"":"no-price"}" aria-label="سعر الوحدة" placeholder="السعر"></td>
@@ -999,8 +1053,8 @@ function buildPdf(){
   quote.items.forEach(i=>{ const r = (i.room||"").trim(); if(!(r in groups)){ groups[r]=[]; order.push(r); } groups[r].push(i); });
   const hasRooms = order.some(r=>r);
   const rows = order.map(r=>(hasRooms ? `<tr class="room-row"><td colspan="5">${esc(r||"General")}</td></tr>` : "") +
-    groups[r].map(i=>`<tr><td dir="auto">${esc(i.name)}</td><td>${n2(i.qty)} Units</td><td>${n2(i.unit_price)}</td>
-      <td>${Number(i.discount_pct) ? n2(i.discount_pct) : ""}</td><td class="amt">${n2(lineTotal(i))} LE</td></tr>`).join("")).join("");
+    groups[r].map(i=>{ const img = productImage(i.product_id); return `<tr><td dir="auto">${img ? `<div class="d-prod"><img src="${esc(img)}" alt=""><span>${esc(i.name)}</span></div>` : esc(i.name)}</td><td>${n2(i.qty)} Units</td><td>${n2(i.unit_price)}</td>
+      <td>${Number(i.discount_pct) ? n2(i.discount_pct) : ""}</td><td class="amt">${n2(lineTotal(i))} LE</td></tr>`; }).join("")).join("");
   const extra = (t.inst ? `<div class="s"><span>Installation (${n2(t.instPct)}%)</span><span>${n2(t.inst)} LE</span></div>` : "") +
                 (t.disc ? `<div class="s"><span>Discount (${n2(t.discPct)}%)</span><span>-${n2(t.disc)} LE</span></div>` : "");
   $("pdfDoc").innerHTML = `
