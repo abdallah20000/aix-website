@@ -128,8 +128,8 @@ tr.inactive td{color:var(--muted)}
 .q-totals select.disc-sel{width:70px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;text-align:center}
 .disc-pair{display:flex;gap:4px;align-items:center}
 .q-items .disc-pair select.disc-sel{flex:1 1 56px;min-width:0}
-.disc-free{width:62px;flex:0 0 62px;padding:7px 4px;border:1px dashed #999;border-radius:6px;text-align:center;background:#fff}
-.q-totals .disc-free{width:56px;padding:5px 4px}
+.disc-free{width:70px;flex:0 0 70px;padding:7px 4px;border:1.5px solid var(--lime);border-radius:6px;text-align:center;background:#fff}
+.q-totals .disc-free{width:84px;padding:5px 4px}
 .p-settings{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px}
 .p-settings label{display:flex;gap:8px;align-items:center;cursor:pointer}
 .p-settings input{width:18px;height:18px;accent-color:var(--ink)}
@@ -147,6 +147,9 @@ tr.inactive td{color:var(--muted)}
   .picker{flex-wrap:wrap}
   .picker select{flex:1 1 100%;max-width:none}
   .pgrid{grid-template-columns:repeat(3,1fr);gap:8px;max-height:60vh}
+  .q-items .c-disc:has(.disc-free){grid-column:1/-1;width:auto!important;min-width:0}
+  .q-items .c-disc .disc-pair::before{content:"خصم %";font-size:13px;color:var(--muted);flex:0 0 auto}
+  .q-items .c-disc .disc-free{flex:1 1 auto}
   .pcard{padding:6px}
   .pcard .pimg.ph{font-size:26px}
   .pcard .pn{font-size:11.5px}
@@ -428,7 +431,7 @@ tr.row:hover td{background:#fafafa}
       <div class="q-totals">
         <div><span>إجمالي المنتجات</span><b id="tSub" dir="ltr">0</b></div>
         <div><span>تركيب وبرمجة <input id="tInstPct" type="number" min="0" step="any" dir="ltr"> %</span><b id="tInst" dir="ltr">0</b></div>
-        <div><span>خصم <select id="tDiscPct" class="disc-sel" dir="ltr"><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option></select> <input id="tDiscFree" class="disc-free hidden" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" placeholder="أخرى" aria-label="نسبة خصم مختلفة"> %</span><b id="tDisc" dir="ltr">0</b></div>
+        <div><span>خصم <select id="tDiscPct" class="disc-sel" dir="ltr"><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option></select> <input id="tDiscFree" class="disc-free hidden" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" placeholder="اكتب %" aria-label="نسبة خصم مختلفة"> %</span><b id="tDisc" dir="ltr">0</b></div>
         <div class="grand"><span>الإجمالي</span><b id="tTotal" dir="ltr">0</b></div>
       </div>
 
@@ -958,7 +961,7 @@ function renderQuoteItems(){
       <td class="c-disc">${isAdmin
         ? `<input data-k="discount_pct" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${i.discount_pct ? esc(i.discount_pct) : ""}" placeholder="0" aria-label="خصم البند %">`
         : `<div class="disc-pair"><select data-k="discount_pct" class="disc-sel" dir="ltr" aria-label="خصم البند %">${discOptions(i.discount_pct)}</select>${canFreeDisc()
-            ? `<input data-k="discount_pct" class="disc-free" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${DISCOUNTS.includes(Number(i.discount_pct)||0) ? "" : esc(i.discount_pct)}" placeholder="أخرى" aria-label="نسبة خصم مختلفة">` : ""}</div>`}</td>
+            ? `<input data-k="discount_pct" class="disc-free" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${DISCOUNTS.includes(Number(i.discount_pct)||0) ? "" : esc(i.discount_pct)}" placeholder="اكتب %" aria-label="نسبة خصم مختلفة">` : ""}</div>`}</td>
       <td class="c-total" dir="ltr">${money(lineTotal(i))}</td>
       <td class="c-del"><button type="button" class="del" aria-label="شيل البند">×</button></td>
     </tr>`).join("")
