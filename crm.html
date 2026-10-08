@@ -571,7 +571,10 @@ const canFreePrice = () => isAdmin || settings.free_price, canFreeDisc = () => i
 // admin can open product editing to sales for a short window; the database closes it on its own when time is up
 const editUntil = () => settings.crm_products_until ? new Date(settings.crm_products_until) : null;
 const canEditProducts = () => isAdmin || (editUntil() > new Date());
-const hhmm = d => d.toLocaleTimeString("ar-EG",{hour:"numeric",minute:"2-digit"});
+// time only when it ends today, otherwise the date too
+const hhmm = d => d.toDateString()===new Date().toDateString()
+  ? d.toLocaleTimeString("ar-EG",{hour:"numeric",minute:"2-digit"})
+  : d.toLocaleDateString("ar-EG",{day:"numeric",month:"long"}) + " " + d.toLocaleTimeString("ar-EG",{hour:"numeric",minute:"2-digit"});
 let editTimer = null;
 function showEditWindow(){
   const until = editUntil(), open = until > new Date();
@@ -580,7 +583,7 @@ function showEditWindow(){
   $("crmEditNote").classList.toggle("hidden", isAdmin || !open);
   $("crmEditNote").textContent = open ? `✏️ تعديل المنتجات مفتوح ليك لحد ${hhmm(until)}` : "";
   clearTimeout(editTimer);
-  if(open) editTimer = setTimeout(()=>{ showEditWindow(); if(productsLoaded) renderProducts(); if(!isAdmin) showProductDrawer(false); }, until - new Date() + 500);
+  if(open && until - new Date() < 2**31-1) editTimer = setTimeout(()=>{ showEditWindow(); if(productsLoaded) renderProducts(); if(!isAdmin) showProductDrawer(false); }, until - new Date() + 500);
 }
 async function loadSettings(){
   const { data, error } = await sb.from("app_settings").select("free_discount,free_price,crm_products_until").eq("id",1).single();
