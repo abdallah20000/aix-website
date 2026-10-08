@@ -100,11 +100,22 @@ tr.inactive td{color:var(--muted)}
 .picker select{padding:10px 8px;border:1px solid var(--ink);border-radius:6px;background:#fff;max-width:38%}
 .picker .line-btn{white-space:nowrap}
 .line-btn{background:#fff;border:1px solid var(--ink);border-radius:6px;padding:9px 14px;font-weight:600}
-.pick-res{position:absolute;top:100%;inset-inline:0;background:#fff;border:1px solid var(--ink);border-top:0;max-height:300px;overflow-y:auto;z-index:3;border-radius:0 0 6px 6px}
-.pick-res button{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:right;border:0;border-top:1px solid var(--line);background:#fff;padding:9px 12px}
-.pick-res button:hover,.pick-res button:focus{background:var(--soft)}
-.pick-res .p-name{font-weight:600}
-.pick-res .p-price{direction:ltr;white-space:nowrap}
+.pcats{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:thin}
+.pcats button{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap}
+.pcats button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px;max-height:430px;overflow-y:auto;padding:2px 2px 6px;margin-bottom:14px}
+.pcard{position:relative;display:flex;flex-direction:column;gap:6px;text-align:right;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;cursor:pointer;transition:border-color .15s,transform .1s}
+.pcard:hover,.pcard:focus-visible{border-color:var(--ink)}
+.pcard:active{transform:scale(.97)}
+.pcard .pimg{width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--soft)}
+.pcard .pimg.ph{display:grid;place-items:center;font-size:34px}
+.pcard .pn{font-size:12.5px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:3.9em}
+.pcard .pp{font-size:13px;direction:ltr;text-align:left;font-weight:700}
+.pcard .pp .sub{font-weight:400}
+.pcard .pcnt{position:absolute;top:6px;left:6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
+.pcard.added{border-color:var(--lime);background:#f4faea}
+.pgrid .empty{grid-column:1/-1;padding:14px;color:var(--muted)}
+.pgrid:has(.pcard:disabled){opacity:.5}
 .q-items{width:100%;border-collapse:collapse;min-width:0}
 .q-items th{position:static}
 .q-items td{padding:6px 4px;vertical-align:top}
@@ -127,6 +138,10 @@ tr.inactive td{color:var(--muted)}
   .qv-meta{grid-template-columns:1fr 1fr}
   .picker{flex-wrap:wrap}
   .picker select{flex:1 1 100%;max-width:none}
+  .pgrid{grid-template-columns:repeat(3,1fr);gap:8px;max-height:60vh}
+  .pcard{padding:6px}
+  .pcard .pimg.ph{font-size:26px}
+  .pcard .pn{font-size:11.5px}
   .q-items thead{display:none}
   .q-items tr{display:grid;grid-template-columns:1fr 1.3fr 1fr 34px;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
   .q-items td{padding:0;width:auto!important}
@@ -384,10 +399,11 @@ tr.row:hover td{background:#fafafa}
 
       <div class="picker">
         <select id="qBrand" aria-label="البراند"><option value="">كل البراندات</option></select>
-        <input id="pick" type="search" placeholder="ضيف منتج: اكتب الاسم أو الكود…" aria-label="بحث عن منتج">
+        <input id="pick" type="search" placeholder="دوّر بالاسم أو الكود… أو اختار من الصور تحت" aria-label="بحث عن منتج">
         <button type="button" class="line-btn" id="addCustom">+ بند يدوي</button>
-        <div class="pick-res hidden" id="pickRes"></div>
       </div>
+      <div class="pcats" id="pickCats" role="tablist" aria-label="الأقسام"></div>
+      <div class="pgrid" id="pickGrid" aria-label="المنتجات"></div>
 
       <div class="tbl-wrap">
         <table class="q-items">
@@ -859,7 +875,7 @@ async function openQuote(id){
   }
   $("qvTitle").textContent = quote.quote_number ? `عرض سعر ${quote.quote_number}` : "عرض سعر جديد";
   $("qDel").classList.toggle("hidden", !quote.id || !isAdmin);
-  $("pick").value = ""; $("pickRes").classList.add("hidden");
+  $("pick").value = ""; pickCat = "";
   fillBrands();
   quoteDirty = !quote.id; renderQuoteItems();
   $("qv").classList.remove("hidden");
@@ -873,7 +889,6 @@ $("qvClose").onclick = closeQuote;
 document.addEventListener("keydown", e=>{
   if(e.key!=="Escape" || $("qv").classList.contains("hidden")) return;
   e.stopImmediatePropagation();
-  if(!$("pickRes").classList.contains("hidden")){ $("pickRes").classList.add("hidden"); return; }
   closeQuote();
 }, true);
 
@@ -919,7 +934,7 @@ function renderQuoteItems(){
     }));
     tr.querySelector(".del").onclick = ()=>{ quote.items.splice(+tr.dataset.n,1); quoteDirty=true; renderQuoteItems(); };
   });
-  updateTotals(); applyLock();
+  updateTotals(); applyLock(); showPicks();
 }
 
 // product picker
@@ -930,27 +945,40 @@ function fillBrands(){
   sel.innerHTML = `<option value="">كل البراندات</option>` + brands.map(b=>`<option>${esc(b)}</option>`).join("");
   sel.value = brands.includes(keep) ? keep : "";
 }
+// visual catalog: category chips + image cards, filtered by brand and search
+let pickCat = "";
+const CAT_ICON = [[/switch|socket|dimmer|plug/i,"💡"],[/lock/i,"🔒"],[/camera|cctv/i,"📷"],[/intercom|door ?bell|door phone/i,"🔔"],[/sensor|detector/i,"📡"],[/curtain|shutter|blind/i,"🪟"],[/screen|panel|hub|gateway/i,"📱"],[/electric|breaker|meter/i,"⚡"],[/light|lamp|led/i,"💡"],[/speaker|audio|sound/i,"🔊"],[/ir|remote|a\/c|thermostat/i,"🌡️"]];
+const catIcon = p => (CAT_ICON.find(([re])=>re.test((p.category||"")+" "+p.name))||[,"📦"])[1];
 function showPicks(){
+  if(!quote) return;
   const q = $("pick").value.trim().toLowerCase(), type = $("qForm").client_type.value, brand = $("qBrand").value;
-  if(!q && !brand){ $("pickRes").classList.add("hidden"); return; }
-  const hits = products.filter(p=>p.active!==false && (!brand || (p.brand||"").trim()===brand) &&
-    (!q || [p.name,p.code,p.brand].some(x=>String(x||"").toLowerCase().includes(q)))).slice(0, q ? 30 : 60);
-  $("pickRes").innerHTML = hits.length ? hits.map(p=>{ const pr = priceFor(p,type);
-    return `<button type="button" data-id="${p.id}"><span><span class="p-name" dir="auto">${esc(p.name)}</span> <span class="sub">${esc(p.code||"")} · ${esc(p.category||"")}</span></span>
-      <span class="p-price">${pr!=null ? money(pr) : '<span class="sub">من غير سعر</span>'}</span></button>`; }).join("")
-    : `<div class="sub" style="padding:10px 12px">مفيش منتج بالاسم ده — استخدم «بند يدوي»</div>`;
-  $("pickRes").classList.remove("hidden");
-  $("pickRes").querySelectorAll("button").forEach(b=>b.onclick=()=>addProduct(b.dataset.id));
+  const pool = products.filter(p=>p.active!==false && (!brand || (p.brand||"").trim()===brand) &&
+    (!q || [p.name,p.code,p.brand,p.category].some(x=>String(x||"").toLowerCase().includes(q))));
+  const cats = [...new Set(pool.map(p=>p.category||"أخرى"))].sort((a,b)=>a.localeCompare(b));
+  if(pickCat && !cats.includes(pickCat)) pickCat = "";
+  $("pickCats").innerHTML = [`<button type="button" data-c="" class="${pickCat?"":"on"}">الكل (${pool.length})</button>`,
+    ...cats.map(c=>`<button type="button" data-c="${esc(c)}" class="${c===pickCat?"on":""}" dir="auto">${esc(c)} (${pool.filter(p=>(p.category||"أخرى")===c).length})</button>`)].join("");
+  $("pickCats").querySelectorAll("button").forEach(b=>b.onclick=()=>{ pickCat = b.dataset.c; showPicks(); });
+  const hits = pool.filter(p=>!pickCat || (p.category||"أخرى")===pickCat);
+  const inQuote = {}; quote.items.forEach(i=>{ if(i.product_id) inQuote[i.product_id] = (inQuote[i.product_id]||0) + (Number(i.qty)||0); });
+  const locked = $("pick").disabled, grid = $("pickGrid"), top = grid.scrollTop;
+  grid.innerHTML = hits.length ? hits.map(p=>{ const pr = priceFor(p,type), n = inQuote[p.id];
+    return `<button type="button" class="pcard${n?" added":""}" data-id="${p.id}" ${locked?"disabled":""} title="${esc(p.name)}">
+      ${n?`<span class="pcnt">${n}</span>`:""}
+      ${p.image_url ? `<img class="pimg" src="${esc(p.image_url)}" alt="" loading="lazy">` : `<span class="pimg ph" aria-hidden="true">${catIcon(p)}</span>`}
+      <span class="pn" dir="auto">${esc(p.name)}</span>
+      <span class="pp">${pr!=null ? money(pr)+' <span class="sub">LE</span>' : '<span class="sub">من غير سعر</span>'}</span></button>`; }).join("")
+    : `<div class="empty">مفيش منتج بالاسم ده — استخدم «بند يدوي»</div>`;
+  grid.scrollTop = top;
+  grid.querySelectorAll(".pcard").forEach(b=>b.onclick=()=>addProduct(b.dataset.id));
 }
 $("pick").addEventListener("input", showPicks);
-$("pick").addEventListener("focus", ()=>{ if($("qBrand").value) showPicks(); });
 $("qBrand").addEventListener("change", ()=>{
   const b = $("qBrand").value, t = $("qForm").terms;
   if(b && /^Brands : .*$/m.test(t.value)){ t.value = t.value.replace(/^Brands : .*$/m, "Brands : "+b); quoteDirty = true; }
-  showPicks(); $("pick").focus();
+  pickCat = ""; showPicks();
 });
-$("pick").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("pickRes").querySelector("button")?.click(); } });
-document.addEventListener("click", e=>{ if(!e.target.closest(".picker")) $("pickRes").classList.add("hidden"); });
+$("pick").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("pickGrid").querySelector(".pcard")?.click(); } });
 
 function addProduct(id){
   const p = products.find(x=>x.id===id); if(!p) return;
@@ -958,7 +986,7 @@ function addProduct(id){
   const same = quote.items.find(i=>i.product_id===p.id && (i.room||"")===(lastRoom||""));
   if(same) same.qty = (Number(same.qty)||0) + 1;
   else quote.items.push({ product_id:p.id, name:p.name, description:p.description, room:lastRoom||"", qty:1, unit_price:priceFor(p,$("qForm").client_type.value), discount_pct:0 });
-  quoteDirty = true; $("pick").value = ""; $("pickRes").classList.add("hidden"); renderQuoteItems(); $("pick").focus();
+  quoteDirty = true; renderQuoteItems(); toast("اتضاف: "+p.name);
 }
 $("addCustom").onclick = ()=>{
   const lastRoom = quote.items.length ? quote.items[quote.items.length-1].room : "";
