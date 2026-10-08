@@ -123,8 +123,16 @@ tr.inactive td{color:var(--muted)}
 .q-items .c-room{width:16%}.q-items .c-qty{width:9%}.q-items .c-price{width:15%}.q-items .c-total{width:14%;text-align:left;padding-top:13px;font-weight:600;white-space:nowrap}
 .q-items .c-del{width:34px}
 .q-items .c-disc{width:9%}
+.q-items .c-disc:has(.disc-free){width:140px;min-width:140px}
 .q-items select.disc-sel{width:100%;padding:7px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
 .q-totals select.disc-sel{width:70px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;text-align:center}
+.disc-pair{display:flex;gap:4px;align-items:center}
+.q-items .disc-pair select.disc-sel{flex:1 1 56px;min-width:0}
+.disc-free{width:62px;flex:0 0 62px;padding:7px 4px;border:1px dashed #999;border-radius:6px;text-align:center;background:#fff}
+.q-totals .disc-free{width:56px;padding:5px 4px}
+.p-settings{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px}
+.p-settings label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.p-settings input{width:18px;height:18px;accent-color:var(--ink)}
 .q-items input.fixed-price{background:var(--soft);color:#333;border-color:var(--line)}
 .q-items .del{border:0;background:none;color:var(--red);font-size:20px;line-height:1;padding:6px}
 .q-items .desc{font-size:12px;color:var(--muted);margin-top:4px}
@@ -300,6 +308,11 @@ tr.row:hover td{background:#fafafa}
     </nav>
 
     <section id="tabProducts" class="hidden">
+      <div class="p-settings p-admin hidden" id="pSettings">
+        <b>صلاحيات السيلز في عرض السعر:</b>
+        <label><input type="checkbox" id="setFreePrice"> يكتبوا سعر المنتج بإيدهم</label>
+        <label><input type="checkbox" id="setFreeDisc"> يكتبوا أي نسبة خصم (غير 10/20/30/40)</label>
+      </div>
       <div class="tools">
         <input id="pq" type="search" placeholder="دوّر باسم المنتج أو الكود">
         <select id="pCat"><option value="">كل الأقسام</option></select>
@@ -415,7 +428,7 @@ tr.row:hover td{background:#fafafa}
       <div class="q-totals">
         <div><span>إجمالي المنتجات</span><b id="tSub" dir="ltr">0</b></div>
         <div><span>تركيب وبرمجة <input id="tInstPct" type="number" min="0" step="any" dir="ltr"> %</span><b id="tInst" dir="ltr">0</b></div>
-        <div><span>خصم <select id="tDiscPct" class="disc-sel" dir="ltr"><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option></select> %</span><b id="tDisc" dir="ltr">0</b></div>
+        <div><span>خصم <select id="tDiscPct" class="disc-sel" dir="ltr"><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option></select> <input id="tDiscFree" class="disc-free hidden" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" placeholder="أخرى" aria-label="نسبة خصم مختلفة"> %</span><b id="tDisc" dir="ltr">0</b></div>
         <div class="grand"><span>الإجمالي</span><b id="tTotal" dir="ltr">0</b></div>
       </div>
 
@@ -549,10 +562,24 @@ async function onSession(session){
   document.querySelectorAll(".p-admin").forEach(el=>el.classList.toggle("hidden", !isAdmin));
   $("login").classList.toggle("hidden", !!user);
   $("app").classList.toggle("hidden", !user);
-  if(user){ $("userEmail").textContent = user.email; loadLeads(); }
+  if(user){ $("userEmail").textContent = user.email; loadLeads(); loadSettings(); }
 }
 
 // ---------- DATA ----------
+// admin switches for what sales may type in a quotation (the database enforces the same switches)
+let settings = { free_discount:false, free_price:false };
+const canFreePrice = () => isAdmin || settings.free_price, canFreeDisc = () => isAdmin || settings.free_discount;
+async function loadSettings(){
+  const { data, error } = await sb.from("app_settings").select("free_discount,free_price").eq("id",1).single();
+  if(error){ console.error(error); return; }
+  settings = data; $("setFreePrice").checked = data.free_price; $("setFreeDisc").checked = data.free_discount;
+}
+[["setFreePrice","free_price"],["setFreeDisc","free_discount"]].forEach(([id,k])=>$(id).addEventListener("change", async ()=>{
+  const el = $(id), { error } = await sb.from("app_settings").update({ [k]:el.checked, updated_at:new Date().toISOString() }).eq("id",1);
+  if(error){ el.checked = !el.checked; toast("ما اتحفظش"); console.error(error); return; }
+  settings[k] = el.checked; toast("اتحفظ");
+}));
+
 async function loadLeads(){
   const { data, error } = await sb.from("leads").select("*").order("created_at",{ascending:false});
   if(error){ toast("مشكلة في تحميل العملاء"); console.error(error); return; }
@@ -865,13 +892,13 @@ async function openQuote(id){
     quote = { id:q.id, quote_number:q.quote_number, lead_id:q.lead_id, status:q.status, items:items.map(({sort_order,...i})=>i),
       delete_requested_by:q.delete_requested_by, delete_requested_at:q.delete_requested_at };
     ["client_name","client_type","quote_date","valid_until","status","notes","terms"].forEach(k=>f[k].value = q[k] ?? "");
-    $("tInstPct").value = q.install_pct; $("tDiscPct").innerHTML = discOptions(q.discount_pct);
+    $("tInstPct").value = q.install_pct; setTotalDisc(q.discount_pct);
   } else {
     quote = { id:null, quote_number:null, lead_id:current.id, status:"draft", items:[] };
     const today = todayStr();
     f.client_name.value = current.name; f.client_type.value = current.client_type==="dealer" ? "dealer" : "end_customer";
     f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft"; f.terms.value = DEFAULT_TERMS;
-    $("tInstPct").value = 0; $("tDiscPct").innerHTML = discOptions(0);
+    $("tInstPct").value = 0; setTotalDisc(0);
   }
   $("qvTitle").textContent = quote.quote_number ? `عرض سعر ${quote.quote_number}` : "عرض سعر جديد";
   $("qDel").classList.toggle("hidden", !quote.id || !isAdmin);
@@ -908,7 +935,18 @@ function updateTotals(){
   $("tSub").textContent = money(t.sub); $("tInst").textContent = money(t.inst);
   $("tDisc").textContent = t.disc ? "−"+money(t.disc) : "0"; $("tTotal").textContent = money(t.total);
 }
-["tInstPct","tDiscPct"].forEach(id=>$(id).addEventListener("input",()=>{ quoteDirty=true; updateTotals(); }));
+["tInstPct","tDiscPct"].forEach(id=>$(id).addEventListener("input",()=>{ quoteDirty=true; if(id==="tDiscPct") $("tDiscFree").value = ""; updateTotals(); }));
+// typed discount (when allowed) shows up as an extra option in the dropdown so both stay in step
+const clampPct = v => Math.min(Math.max(Number(v)||0,0),100);
+function setTotalDisc(v){
+  $("tDiscPct").innerHTML = discOptions(v);
+  $("tDiscFree").value = DISCOUNTS.includes(Number(v)||0) ? "" : v;
+  $("tDiscFree").classList.toggle("hidden", !canFreeDisc());
+}
+$("tDiscFree").addEventListener("input", ()=>{
+  const v = $("tDiscFree").value; $("tDiscPct").innerHTML = discOptions(v==="" ? 0 : clampPct(v));
+  quoteDirty = true; updateTotals();
+});
 $("qForm").addEventListener("input", e=>{ if(e.target.name && e.target.name!=="client_type") quoteDirty=true; });
 
 function renderQuoteItems(){
@@ -916,10 +954,11 @@ function renderQuoteItems(){
       <td class="c-name"><div class="q-row-name">${i.product_id ? thumb(productImage(i.product_id)) : ""}<input data-k="name" value="${esc(i.name)}" dir="auto" aria-label="البند"></div>${i.description?`<div class="desc" dir="auto">${esc(i.description)}</div>`:""}</td>
       <td class="c-room"><input data-k="room" value="${esc(i.room||"")}" list="rooms" placeholder="المكان"></td>
       <td class="c-qty"><input data-k="qty" type="number" min="0.01" step="any" inputmode="decimal" dir="ltr" value="${esc(i.qty)}" aria-label="العدد"></td>
-      <td class="c-price"><input data-k="unit_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr" value="${esc(i.unit_price ?? "")}" class="${i.unit_price?"":"no-price"}${!isAdmin && i.product_id ? " fixed-price" : ""}" ${!isAdmin && i.product_id ? "readonly title=\"السعر ثابت\"" : ""} aria-label="سعر الوحدة" placeholder="السعر"></td>
+      <td class="c-price"><input data-k="unit_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr" value="${esc(i.unit_price ?? "")}" class="${i.unit_price?"":"no-price"}${!canFreePrice() && i.product_id ? " fixed-price" : ""}" ${!canFreePrice() && i.product_id ? "readonly title=\"السعر ثابت\"" : ""} aria-label="سعر الوحدة" placeholder="السعر"></td>
       <td class="c-disc">${isAdmin
         ? `<input data-k="discount_pct" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${i.discount_pct ? esc(i.discount_pct) : ""}" placeholder="0" aria-label="خصم البند %">`
-        : `<select data-k="discount_pct" class="disc-sel" dir="ltr" aria-label="خصم البند %">${discOptions(i.discount_pct)}</select>`}</td>
+        : `<div class="disc-pair"><select data-k="discount_pct" class="disc-sel" dir="ltr" aria-label="خصم البند %">${discOptions(i.discount_pct)}</select>${canFreeDisc()
+            ? `<input data-k="discount_pct" class="disc-free" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${DISCOUNTS.includes(Number(i.discount_pct)||0) ? "" : esc(i.discount_pct)}" placeholder="أخرى" aria-label="نسبة خصم مختلفة">` : ""}</div>`}</td>
       <td class="c-total" dir="ltr">${money(lineTotal(i))}</td>
       <td class="c-del"><button type="button" class="del" aria-label="شيل البند">×</button></td>
     </tr>`).join("")
@@ -928,6 +967,11 @@ function renderQuoteItems(){
     const it = quote.items[+tr.dataset.n];
     tr.querySelectorAll("input,select").forEach(inp=>inp.addEventListener("input",()=>{
       const k = inp.dataset.k; it[k] = (k==="qty"||k==="unit_price"||k==="discount_pct") ? (inp.value===""?null:Number(inp.value)) : inp.value;
+      if(k==="discount_pct" && !isAdmin){
+        const sel = tr.querySelector("select.disc-sel"), free = tr.querySelector(".disc-free");
+        if(inp === free){ it.discount_pct = inp.value==="" ? 0 : clampPct(inp.value); sel.innerHTML = discOptions(it.discount_pct); }
+        else if(free) free.value = "";
+      }
       if(k==="unit_price") inp.classList.toggle("no-price", !it.unit_price);
       tr.querySelector(".c-total").textContent = money(lineTotal(it));
       quoteDirty = true; updateTotals();
@@ -1048,7 +1092,7 @@ function applyLock(){
   const locked = !!quote.id && quote.status !== "draft" && !isAdmin, req = !!quote.delete_requested_at;
   $("qForm").querySelectorAll("input,select,textarea").forEach(el=>el.disabled = locked);
   $("qRows").querySelectorAll(".del").forEach(el=>el.classList.toggle("hidden", locked));
-  ["pick","qBrand","addCustom","tInstPct","tDiscPct"].forEach(id=>$(id).disabled = locked);
+  ["pick","qBrand","addCustom","tInstPct","tDiscPct","tDiscFree"].forEach(id=>$(id).disabled = locked);
   $("qSave").classList.toggle("hidden", locked);
   $("qCopy").classList.toggle("hidden", !quote.id);
   const by = (quote.delete_requested_by||"").split("@")[0];
