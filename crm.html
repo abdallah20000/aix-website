@@ -112,6 +112,9 @@ tr.inactive td{color:var(--muted)}
 .q-items .c-room{width:16%}.q-items .c-qty{width:9%}.q-items .c-price{width:15%}.q-items .c-total{width:14%;text-align:left;padding-top:13px;font-weight:600;white-space:nowrap}
 .q-items .c-del{width:34px}
 .q-items .c-disc{width:9%}
+.q-items select.disc-sel{width:100%;padding:7px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.q-totals select.disc-sel{width:70px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;text-align:center}
+.q-items input.fixed-price{background:var(--soft);color:#333;border-color:var(--line)}
 .q-items .del{border:0;background:none;color:var(--red);font-size:20px;line-height:1;padding:6px}
 .q-items .desc{font-size:12px;color:var(--muted);margin-top:4px}
 .no-price{border-color:var(--red)!important}
@@ -396,7 +399,7 @@ tr.row:hover td{background:#fafafa}
       <div class="q-totals">
         <div><span>إجمالي المنتجات</span><b id="tSub" dir="ltr">0</b></div>
         <div><span>تركيب وبرمجة <input id="tInstPct" type="number" min="0" step="any" dir="ltr"> %</span><b id="tInst" dir="ltr">0</b></div>
-        <div><span>خصم <input id="tDiscPct" type="number" min="0" max="100" step="any" dir="ltr"> %</span><b id="tDisc" dir="ltr">0</b></div>
+        <div><span>خصم <select id="tDiscPct" class="disc-sel" dir="ltr"><option value="0">0</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option></select> %</span><b id="tDisc" dir="ltr">0</b></div>
         <div class="grand"><span>الإجمالي</span><b id="tTotal" dir="ltr">0</b></div>
       </div>
 
@@ -846,13 +849,13 @@ async function openQuote(id){
     quote = { id:q.id, quote_number:q.quote_number, lead_id:q.lead_id, status:q.status, items:items.map(({sort_order,...i})=>i),
       delete_requested_by:q.delete_requested_by, delete_requested_at:q.delete_requested_at };
     ["client_name","client_type","quote_date","valid_until","status","notes","terms"].forEach(k=>f[k].value = q[k] ?? "");
-    $("tInstPct").value = q.install_pct; $("tDiscPct").value = q.discount_pct;
+    $("tInstPct").value = q.install_pct; $("tDiscPct").innerHTML = discOptions(q.discount_pct);
   } else {
     quote = { id:null, quote_number:null, lead_id:current.id, status:"draft", items:[] };
     const today = todayStr();
     f.client_name.value = current.name; f.client_type.value = current.client_type==="dealer" ? "dealer" : "end_customer";
     f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft"; f.terms.value = DEFAULT_TERMS;
-    $("tInstPct").value = 0; $("tDiscPct").value = 0;
+    $("tInstPct").value = 0; $("tDiscPct").innerHTML = discOptions(0);
   }
   $("qvTitle").textContent = quote.quote_number ? `عرض سعر ${quote.quote_number}` : "عرض سعر جديد";
   $("qDel").classList.toggle("hidden", !quote.id || !isAdmin);
@@ -874,6 +877,10 @@ document.addEventListener("keydown", e=>{
   closeQuote();
 }, true);
 
+// sales may only give these discounts (the database enforces the same list)
+const DISCOUNTS = [0,10,20,30,40];
+const discOptions = v => { const cur = Number(v)||0, list = DISCOUNTS.includes(cur) ? DISCOUNTS : [...DISCOUNTS, cur].sort((a,b)=>a-b);
+  return list.map(d=>`<option value="${d}" ${d===cur?"selected":""}>${d}</option>`).join(""); };
 const lineTotal = i => (Number(i.qty)||0) * (Number(i.unit_price)||0) * (1 - Math.min(Number(i.discount_pct)||0,100)/100);
 function calcQuote(){
   const sub = quote.items.reduce((s,i)=>s + lineTotal(i), 0);
@@ -894,15 +901,17 @@ function renderQuoteItems(){
       <td class="c-name"><div class="q-row-name">${i.product_id ? thumb(productImage(i.product_id)) : ""}<input data-k="name" value="${esc(i.name)}" dir="auto" aria-label="البند"></div>${i.description?`<div class="desc" dir="auto">${esc(i.description)}</div>`:""}</td>
       <td class="c-room"><input data-k="room" value="${esc(i.room||"")}" list="rooms" placeholder="المكان"></td>
       <td class="c-qty"><input data-k="qty" type="number" min="0.01" step="any" inputmode="decimal" dir="ltr" value="${esc(i.qty)}" aria-label="العدد"></td>
-      <td class="c-price"><input data-k="unit_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr" value="${esc(i.unit_price ?? "")}" class="${i.unit_price?"":"no-price"}" aria-label="سعر الوحدة" placeholder="السعر"></td>
-      <td class="c-disc"><input data-k="discount_pct" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${i.discount_pct ? esc(i.discount_pct) : ""}" placeholder="0" aria-label="خصم البند %"></td>
+      <td class="c-price"><input data-k="unit_price" type="number" min="0" step="any" inputmode="decimal" dir="ltr" value="${esc(i.unit_price ?? "")}" class="${i.unit_price?"":"no-price"}${!isAdmin && i.product_id ? " fixed-price" : ""}" ${!isAdmin && i.product_id ? "readonly title=\"السعر ثابت\"" : ""} aria-label="سعر الوحدة" placeholder="السعر"></td>
+      <td class="c-disc">${isAdmin
+        ? `<input data-k="discount_pct" type="number" min="0" max="100" step="any" inputmode="decimal" dir="ltr" value="${i.discount_pct ? esc(i.discount_pct) : ""}" placeholder="0" aria-label="خصم البند %">`
+        : `<select data-k="discount_pct" class="disc-sel" dir="ltr" aria-label="خصم البند %">${discOptions(i.discount_pct)}</select>`}</td>
       <td class="c-total" dir="ltr">${money(lineTotal(i))}</td>
       <td class="c-del"><button type="button" class="del" aria-label="شيل البند">×</button></td>
     </tr>`).join("")
     : `<tr><td colspan="7" class="empty">دوّر على منتج من فوق وضيفه للعرض</td></tr>`;
   $("qRows").querySelectorAll("tr[data-n]").forEach(tr=>{
     const it = quote.items[+tr.dataset.n];
-    tr.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{
+    tr.querySelectorAll("input,select").forEach(inp=>inp.addEventListener("input",()=>{
       const k = inp.dataset.k; it[k] = (k==="qty"||k==="unit_price"||k==="discount_pct") ? (inp.value===""?null:Number(inp.value)) : inp.value;
       if(k==="unit_price") inp.classList.toggle("no-price", !it.unit_price);
       tr.querySelector(".c-total").textContent = money(lineTotal(it));
