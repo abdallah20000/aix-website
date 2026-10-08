@@ -308,7 +308,10 @@ tr.row:hover td{background:#fafafa}
         <b>صلاحيات السيلز في عرض السعر:</b>
         <label><input type="checkbox" id="setFreePrice"> يكتبوا سعر المنتج بإيدهم</label>
         <label><input type="checkbox" id="setFreeDisc"> يكتبوا أي نسبة خصم (غير 10/20/30/40)</label>
+        <span class="p-temp"><button type="button" class="line-btn" id="crmEditOpen">افتح تعديل المنتجات للسيلز 10 دقايق</button>
+          <button type="button" class="line-btn hidden" id="crmEditClose">اقفل التعديل دلوقتي</button> <span class="sub" id="crmEditState"></span></span>
       </div>
+      <div class="p-settings hidden" id="crmEditNote"></div>
       <div class="tools">
         <input id="pq" type="search" placeholder="دوّر باسم المنتج أو الكود">
         <select id="pCat"><option value="">كل الأقسام</option></select>
@@ -563,13 +566,37 @@ async function onSession(session){
 
 // ---------- DATA ----------
 // admin switches for what sales may type in a quotation (the database enforces the same switches)
-let settings = { free_discount:false, free_price:false };
+let settings = { free_discount:false, free_price:false, crm_products_until:null };
 const canFreePrice = () => isAdmin || settings.free_price, canFreeDisc = () => isAdmin || settings.free_discount;
+// admin can open product editing to sales for a short window; the database closes it on its own when time is up
+const editUntil = () => settings.crm_products_until ? new Date(settings.crm_products_until) : null;
+const canEditProducts = () => isAdmin || (editUntil() > new Date());
+const hhmm = d => d.toLocaleTimeString("ar-EG",{hour:"numeric",minute:"2-digit"});
+let editTimer = null;
+function showEditWindow(){
+  const until = editUntil(), open = until > new Date();
+  $("crmEditClose").classList.toggle("hidden", !open);
+  $("crmEditState").textContent = open ? `مفتوح لحد ${hhmm(until)}` : "";
+  $("crmEditNote").classList.toggle("hidden", isAdmin || !open);
+  $("crmEditNote").textContent = open ? `✏️ تعديل المنتجات مفتوح ليك لحد ${hhmm(until)}` : "";
+  clearTimeout(editTimer);
+  if(open) editTimer = setTimeout(()=>{ showEditWindow(); if(productsLoaded) renderProducts(); if(!isAdmin) showProductDrawer(false); }, until - new Date() + 500);
+}
 async function loadSettings(){
-  const { data, error } = await sb.from("app_settings").select("free_discount,free_price").eq("id",1).single();
+  const { data, error } = await sb.from("app_settings").select("free_discount,free_price,crm_products_until").eq("id",1).single();
   if(error){ console.error(error); return; }
   settings = data; $("setFreePrice").checked = data.free_price; $("setFreeDisc").checked = data.free_discount;
+  showEditWindow(); if(productsLoaded) renderProducts();
 }
+async function setEditWindow(minutes){
+  const until = minutes ? new Date(Date.now() + minutes*60000).toISOString() : null;
+  const { error } = await sb.from("app_settings").update({ crm_products_until:until, updated_at:new Date().toISOString() }).eq("id",1);
+  if(error){ toast("ما اتحفظش"); console.error(error); return; }
+  settings.crm_products_until = until; showEditWindow();
+  toast(minutes ? `السيلز يقدروا يعدلوا المنتجات ${minutes} دقايق` : "التعديل اتقفل على السيلز");
+}
+$("crmEditOpen").onclick = ()=>setEditWindow(10);
+$("crmEditClose").onclick = ()=>setEditWindow(0);
 [["setFreePrice","free_price"],["setFreeDisc","free_discount"]].forEach(([id,k])=>$(id).addEventListener("change", async ()=>{
   const el = $(id), { error } = await sb.from("app_settings").update({ [k]:el.checked, updated_at:new Date().toISOString() }).eq("id",1);
   if(error){ el.checked = !el.checked; toast("ما اتحفظش"); console.error(error); return; }
@@ -701,7 +728,7 @@ document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>{
     const on = x===b; x.setAttribute("aria-selected", on); $(x.dataset.tab).classList.toggle("hidden", !on);
   });
-  if(b.dataset.tab==="tabProducts") productsLoaded ? renderProducts() : loadProducts();
+  if(b.dataset.tab==="tabProducts"){ productsLoaded ? renderProducts() : loadProducts(); loadSettings(); }
 });
 
 // ---------- PRODUCTS ----------
@@ -725,7 +752,7 @@ async function loadProducts(){
 }
 
 function renderProducts(){
-  const q=$("pq").value.trim().toLowerCase(), fc=$("pCat").value, cols = isAdmin ? 6 : 5;
+  const q=$("pq").value.trim().toLowerCase(), fc=$("pCat").value, cols = canEditProducts() ? 6 : 5;
   const list = products.filter(p=>(!fc || p.category===fc) &&
     (!q || [p.name,p.code].some(x=>String(x||"").toLowerCase().includes(q))));
   if(!list.length){ $("pRows").innerHTML = `<tr><td colspan="${cols}" class="empty">${products.length?"مفيش نتايج":"لسه مفيش منتجات"}</td></tr>`; return; }
@@ -733,13 +760,14 @@ function renderProducts(){
       <td><span class="code">${esc(p.code||"—")}</span></td>
       <td><div class="p-wrap">${thumb(p.image_url)}<div><div class="name">${esc(p.name)}${p.active===false?'<span class="off">موقوف</span>':""}</div>${p.brand?`<div class="sub" dir="auto">${esc(p.brand)}</div>`:""}</div></div></td>
       <td>${esc(p.category||"—")}</td>
-      ${isAdmin ? ["end_user_price","dealer_price"].map(k=>`<td><input class="price-in${p[k]==null&&k==="end_user_price"?" missing":""}" type="number" min="0" step="any" inputmode="decimal" dir="ltr"
+      ${canEditProducts() ? ["end_user_price","dealer_price"].map(k=>`<td><input class="price-in${p[k]==null&&k==="end_user_price"?" missing":""}" type="number" min="0" step="any" inputmode="decimal" dir="ltr"
           data-id="${p.id}" data-k="${k}" value="${p[k] ?? ""}" placeholder="—" aria-label="${k==="dealer_price"?"سعر الديلر":"سعر العميل"} — ${esc(p.name)}"></td>`).join("")
         : `<td dir="ltr" style="text-align:right">${fmtMoney(p.end_user_price)}</td>
       <td dir="ltr" style="text-align:right">${fmtMoney(p.dealer_price)}</td>`}
-      ${isAdmin?`<td><button class="edit-btn" data-id="${p.id}">تعديل</button></td>`:""}
+      ${canEditProducts()?`<td><button class="edit-btn" data-id="${p.id}">تعديل</button></td>`:""}
     </tr>`).join("");
-  if(isAdmin){
+  document.querySelectorAll("#tabProducts thead .p-admin").forEach(el=>el.classList.toggle("hidden", !canEditProducts()));
+  if(canEditProducts()){
     $("pRows").querySelectorAll(".edit-btn").forEach(b=>b.onclick=()=>openProduct(b.dataset.id));
     $("pRows").querySelectorAll(".price-in").forEach(inp=>{
       inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); inp.blur(); } if(e.key==="Escape"){ inp.value = products.find(x=>x.id===inp.dataset.id)?.[inp.dataset.k] ?? ""; inp.blur(); } });
@@ -769,7 +797,7 @@ $("pClose").onclick = $("pShade").onclick = ()=>showProductDrawer(false);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") showProductDrawer(false); });
 
 function openProduct(id){
-  if(!isAdmin) return;
+  if(!canEditProducts() || (!id && !isAdmin)) return;
   currentProduct = id ? products.find(p=>p.id===id) : null;
   const f=$("productForm"); f.reset();
   if(currentProduct){
@@ -805,7 +833,7 @@ $("pImgFile").addEventListener("change", async e=>{
 $("pImgDel").onclick = ()=>{ pendingImg = null; removeImg = true; showImg(null); };
 
 $("productForm").addEventListener("submit", async e=>{
-  e.preventDefault(); if(!isAdmin) return; const f=e.target;
+  e.preventDefault(); if(!canEditProducts() || (!currentProduct && !isAdmin)) return; const f=e.target;
   const num = v => v==="" ? null : Number(v);
   const row = {
     code:f.code.value.trim()||null, name:f.name.value.trim(), description:f.description.value.trim()||null,
