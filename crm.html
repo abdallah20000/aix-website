@@ -273,6 +273,100 @@ tr.row:hover td{background:#fafafa}
   .drawer{animation:slide .18s ease-out}
   @keyframes slide{from{transform:translateX(-24px);opacity:.6}to{transform:none;opacity:1}}
 }
+
+/* sidebar (phones: a scrolling bar on top) */
+.tabs.side a{padding:10px 16px;font-weight:600;color:var(--muted);text-decoration:none;white-space:nowrap}
+.tabs.side a:hover,.tabs.side button:hover{color:var(--ink)}
+.tabs.side button,.tabs.side a{white-space:nowrap}
+.nbadge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ink);color:#fff;font-size:11px;margin-inline-start:4px}
+.nbadge:empty{display:none}
+.nbadge.late{background:var(--red)}
+@media (min-width:900px){
+  main{display:grid;grid-template-columns:200px minmax(0,1fr);column-gap:28px;align-items:start;max-width:1320px}
+  main > section{grid-column:2}
+  .tabs.side{grid-column:1;grid-row:1 / span 30;flex-direction:column;border-bottom:0;border-inline-end:1px solid var(--line);position:sticky;top:76px;margin:0;padding-inline-end:10px}
+  .tabs.side button,.tabs.side a{text-align:right;border-bottom:0;border-inline-start:3px solid transparent;margin:0;border-radius:0 6px 6px 0}
+  .tabs.side button[aria-selected="true"]{border-inline-start-color:var(--lime);background:var(--soft);border-bottom-color:transparent}
+}
+@media (max-width:899px){ .tabs.side{overflow-x:auto;scrollbar-width:none} .tabs.side::-webkit-scrollbar{display:none} }
+.sec-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.sec-top h2{margin:0;font-size:22px}
+/* tasks */
+.phone-search{display:flex;gap:8px;margin-bottom:8px}
+.phone-search input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:6px}
+.phone-res{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.task-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.task{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.task.late{border-color:var(--red);border-inline-start-width:5px;background:#fff7f7}
+.task h3{margin:0;font-size:16px}
+.task-top{display:flex;justify-content:space-between;gap:8px;font-size:12px}
+.ttype{background:var(--soft);border-radius:4px;padding:1px 8px;font-weight:600}
+.twhen{color:var(--muted)}
+.task.late .twhen{color:var(--red);font-weight:700}
+.tins{margin:0;color:#333;font-size:14px;white-space:pre-line}
+.tlead{font-size:14px;display:flex;flex-direction:column;gap:2px}
+.tphone{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tphone a{color:var(--ink)}
+.link-btn{border:0;background:none;padding:0;text-decoration:underline;color:var(--ink);font-size:14px}
+.task .primary{align-self:flex-start;margin-top:auto}
+.done-form fieldset{border:0;padding:0;margin:0 0 14px}
+.done-form legend{font-weight:600;margin-bottom:6px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip input{position:absolute;opacity:0;pointer-events:none}
+.chip span{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer;background:#fff}
+.chip input:checked + span{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip input:focus-visible + span{outline:2px solid var(--lime);outline-offset:2px}
+.f-first{border-top:1px dashed var(--line);padding-top:12px;margin-bottom:6px}
+.f-first.muted{opacity:.45}
+.done-form .f{display:block;margin-bottom:12px;font-weight:600;font-size:14px}
+.done-form .f input{display:block;width:100%;margin-top:6px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font-weight:400}
+.req{color:var(--red)}
+.err-box{background:#fdecea;color:var(--red);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-weight:600}
+.done-res{background:#f4faea;border:1px solid var(--lime);border-radius:6px;padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:4px}
+.hist-card{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:14px}
+.hist-card a{color:var(--ink)}
+.sec-h{font-size:15px;margin:0 0 8px}
+/* team */
+.new-member{display:flex;flex-direction:column;gap:10px;border:1px solid var(--ink);border-radius:10px;padding:14px;margin-bottom:16px}
+.nm-fields{display:flex;gap:8px;flex-wrap:wrap}
+.nm-fields input,.m-name{flex:1 1 200px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:6px}
+.new-member .primary{align-self:flex-start}
+.m-perms{display:flex;flex-wrap:wrap;gap:6px}
+.pbox input{position:absolute;opacity:0;pointer-events:none}
+.pbox span{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;background:#fff}
+.pbox input:checked + span{background:var(--lime);border-color:var(--lime-dark);color:#000;font-weight:600}
+.pbox input:focus-visible + span{outline:2px solid var(--ink)}
+.member{display:grid;grid-template-columns:minmax(180px,1fr) 2fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.m-id{display:flex;flex-direction:column;gap:4px}
+.m-id .m-name{flex:none;width:100%}
+.m-id .sub{text-align:right}
+.m-act{display:flex;gap:10px;align-items:center}
+.switch{display:flex;gap:6px;align-items:center;font-size:13px;white-space:nowrap}
+.switch input{width:18px;height:18px;accent-color:var(--lime-dark)}
+@media (max-width:720px){ .member{grid-template-columns:1fr} .m-act{justify-content:space-between} }
+/* dashboard */
+.board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.panel{border:1px solid var(--line);border-radius:10px;padding:14px}
+.panel.wide{grid-column:1/-1}
+.panel h3{margin:0 0 12px;font-size:16px}
+@media (max-width:720px){ .board{grid-template-columns:1fr} }
+.dec{border:1px solid var(--line);border-inline-start:4px solid var(--amber);border-radius:8px;padding:12px;margin-bottom:10px}
+.dec h3{margin:0 0 6px;font-size:15px}
+.dec dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0 0 8px;font-size:14px}
+.dec dt{color:var(--muted)}
+.dec dd{margin:0}
+.dec textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;resize:vertical}
+.dec-opts{display:flex;flex-wrap:wrap;gap:8px}
+.bar-row{display:grid;grid-template-columns:110px 1fr 40px;gap:8px;align-items:center;margin-bottom:6px;font-size:14px}
+.bt{background:var(--soft);border-radius:4px;height:14px;overflow:hidden}
+.bf{display:block;height:100%;background:var(--ink);border-radius:4px}
+.bf.won{background:var(--lime)}
+.bf.lost{background:#bbb}
+.bar-row b{text-align:left;direction:ltr}
+.tt{width:100%;border-collapse:collapse;font-size:14px;min-width:0}
+.tt th,.tt td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line)}
+.tt th:first-child,.tt td:first-child{text-align:right}
+.tt td.late{color:var(--red);font-weight:700}
 </style>
 </head>
 <body>
@@ -295,13 +389,47 @@ tr.row:hover td{background:#fafafa}
 <div id="app" class="hidden">
   <header>
     <div class="brand">AIX <span style="font-size:14px;color:#fff;font-weight:500">CRM</span></div>
-    <div class="who"><a href="/inventory.html" class="admin-only hidden" style="color:#fff">المخزن</a><a href="/installs.html" class="admin-only hidden" style="color:#fff">التركيبات</a><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
+    <div class="who"><span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button></div>
   </header>
   <main>
-    <nav class="tabs" role="tablist">
-      <button type="button" role="tab" aria-selected="true" data-tab="tabLeads">العملاء</button>
-      <button type="button" role="tab" aria-selected="false" data-tab="tabProducts">المنتجات</button>
+    <nav class="tabs side" role="tablist" id="sideNav">
+      <button type="button" role="tab" aria-selected="false" data-tab="tabBoard" data-perm="admin">لوحة عبدالله <span class="nbadge" id="decCount"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-tab="tabTasks" data-perm="*">مهامي <span class="nbadge" id="taskBadge"></span></button>
+      <button type="button" role="tab" aria-selected="true" data-tab="tabLeads" data-perm="admin,crm">العملاء</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="tabProducts" data-perm="admin,crm">المنتجات</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="tabTeam" data-perm="admin">الفريق والصلاحيات</button>
+      <a href="/inventory.html" data-perm="admin,inventory">المخزن ↗</a>
+      <a href="/installs.html" data-perm="admin,installs">التركيبات ↗</a>
     </nav>
+
+    <section id="tabTasks" class="hidden">
+      <div class="sec-top"><h2>مهامي</h2><span class="sub" id="taskSummary"></span></div>
+      <form class="phone-search" id="phoneSearch"><input id="phoneQ" type="search" inputmode="tel" dir="ltr" placeholder="دوّر برقم تليفون العميل" aria-label="رقم التليفون"><button class="line-btn">افتح</button></form>
+      <div class="phone-res" id="phoneRes"></div>
+      <div class="task-list" id="taskList"></div>
+    </section>
+
+    <section id="tabTeam" class="hidden">
+      <div class="sec-top"><h2>الفريق والصلاحيات</h2></div>
+      <form class="new-member" id="newMember">
+        <b>ضيف موظف</b>
+        <div class="nm-fields"><input name="name" placeholder="الاسم" required><input name="email" type="email" dir="ltr" placeholder="name@aixsmart.com" required></div>
+        <div class="m-perms" id="newPerms"></div>
+        <button class="primary" id="newSave">ضيف</button>
+        <div class="sub">الإضافة هنا بتدّي الصلاحيات بس. حساب الدخول نفسه (الإيميل والباسورد) بيتعمل من Supabase.</div>
+      </form>
+      <div class="p-settings hidden" id="teamNote">قايمة الموظفين وصلاحياتهم الحالية و«حاضر النهارده» مش متاحة للموقع لسه (محتاجة إذن قراءة في قاعدة البيانات). اللي ظاهر تحت هو الإيميلات اللي ليها شغل في السيستم، والصلاحيات اللي تختارها وتحفظها بتستبدل القديمة.</div>
+      <div id="teamRows"></div>
+    </section>
+
+    <section id="tabBoard" class="hidden">
+      <div class="sec-top"><h2>لوحة عبدالله</h2><button type="button" class="line-btn" id="boardRefresh">تحديث</button></div>
+      <div class="board">
+        <div class="panel wide"><h3>محتاج قرارك</h3><div id="decList"></div></div>
+        <div class="panel"><h3>خط المبيعات</h3><div id="pipe"></div></div>
+        <div class="panel"><h3>الفريق النهارده</h3><div id="teamToday"></div></div>
+      </div>
+    </section>
 
     <section id="tabProducts" class="hidden">
       <div class="p-settings p-admin hidden" id="pSettings">
@@ -491,13 +619,24 @@ tr.row:hover td{background:#fafafa}
 
 <div class="toast hidden" id="toast"></div>
 
+<div class="shade hidden" id="doneShade"></div>
+<aside class="drawer hidden" id="doneDrawer" aria-modal="true" role="dialog">
+  <div class="drawer-head"><h2 id="doneTitle">تم</h2><button class="x" id="doneClose" aria-label="قفل">×</button></div>
+  <div class="drawer-body"><form id="doneForm" class="done-form"></form></div>
+</aside>
+<div class="shade hidden" id="histShade"></div>
+<aside class="drawer hidden" id="histDrawer" aria-modal="true" role="dialog">
+  <div class="drawer-head"><h2 id="histTitle">العميل</h2><button class="x" id="histClose" aria-label="قفل">×</button></div>
+  <div class="drawer-body" id="histBody"></div>
+</aside>
+
 <script>
 const SUPABASE_URL = "https://xenrnhgxwhujyvtpwmsk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_PWiz7ybQJDngH5Ox3vkx6g_GuCQnQ1R";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const STATUSES = [
-  ["new","جديد"],["contacted","اتكلمنا"],["site_visit","زيارة موقع"],
+  ["new","جديد"],["contacted","اتكلمنا"],["visit_scheduled","معاينة متحددة"],["site_visit","زيارة موقع"],
   ["quotation_sent","عرض سعر اتبعت"],["negotiation","تفاوض"],["won","اتقفل ✓"],["lost","خسرناه"]
 ];
 const SOURCES = [
@@ -544,24 +683,39 @@ $("logout").onclick = ()=> sb.auth.signOut();
 sb.auth.onAuthStateChange((_ev, session)=>{ setTimeout(()=>onSession(session), 0); });
 async function onSession(session){
   user = session?.user || null;
-  let role = null;
+  // the tasks/team screens live in crm-team.js; make sure it has loaded
+  if(document.readyState !== "complete") await new Promise(r=>addEventListener("load", r, { once:true }));
+  let perms = [];
   if(user){
-    ({ data: role } = await sb.rpc("my_role"));
-    const home = { inventory:"/inventory.html", installs:"/installs.html" }[role];
-    if(home){ location.replace(home); return; }
-    if(role !== "admin" && role !== "crm"){
+    // team_members isn't readable from the site, so ask the server about each permission
+    const keys = ["admin","crm","inventory","installs","errands","accounts","reports"];
+    const res = await Promise.all(keys.map(k=>sb.rpc("has_role",{ allowed:[k] })));
+    perms = keys.filter((k,i)=>res[i].data === true);
+    if(!perms.length){
       await sb.auth.signOut();
       $("loginErr").textContent = "الحساب ده لسه مش متفعّل — كلّم عبدالله";
       return;
     }
+    // people with just the stock or just the installs job keep landing on their own page
+    const home = perms.length === 1 && { inventory:"/inventory.html", installs:"/installs.html" }[perms[0]];
+    if(home){ location.replace(home); return; }
   }
-  document.querySelectorAll(".admin-only").forEach(a=>a.classList.toggle("hidden", role !== "admin"));
-  isAdmin = role === "admin"; productsLoaded = false;
+  myPerms = perms;
+  document.querySelectorAll(".admin-only").forEach(a=>a.classList.toggle("hidden", !perms.includes("admin")));
+  isAdmin = perms.includes("admin"); canCrm = isAdmin || perms.includes("crm"); productsLoaded = false;
+  document.querySelectorAll("#sideNav [data-perm]").forEach(el=>{
+    const need = el.dataset.perm; el.classList.toggle("hidden", need !== "*" && !need.split(",").some(p=>perms.includes(p)));
+  });
   $("newProduct").classList.toggle("hidden", !isAdmin);
   document.querySelectorAll(".p-admin").forEach(el=>el.classList.toggle("hidden", !isAdmin));
   $("login").classList.toggle("hidden", !!user);
   $("app").classList.toggle("hidden", !user);
-  if(user){ $("userEmail").textContent = user.email; loadLeads(); loadSettings(); }
+  if(user){
+    $("userEmail").textContent = user.email;
+    if(canCrm){ loadLeads(); loadSettings(); }
+    openTab(isAdmin ? "tabBoard" : canCrm ? "tabLeads" : "tabTasks");
+    loadTasks();
+  }
 }
 
 // ---------- DATA ----------
@@ -727,12 +881,17 @@ $("fuForm").addEventListener("submit", async e=>{
 });
 
 // ---------- TABS ----------
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+function openTab(id){
   document.querySelectorAll(".tabs button").forEach(x=>{
-    const on = x===b; x.setAttribute("aria-selected", on); $(x.dataset.tab).classList.toggle("hidden", !on);
+    const on = x.dataset.tab===id; x.setAttribute("aria-selected", on); $(x.dataset.tab).classList.toggle("hidden", !on);
   });
-  if(b.dataset.tab==="tabProducts"){ productsLoaded ? renderProducts() : loadProducts(); loadSettings(); }
-});
+  if(id==="tabProducts"){ productsLoaded ? renderProducts() : loadProducts(); loadSettings(); }
+  if(id==="tabTasks") loadTasks();
+  if(id==="tabTeam") loadTeam();
+  if(id==="tabBoard") loadBoard();
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>openTab(b.dataset.tab));
+$("boardRefresh").onclick = ()=>loadBoard();
 
 // ---------- PRODUCTS ----------
 // only these columns are ever requested, so cost/supplier data can't reach the page
@@ -740,6 +899,7 @@ const PRODUCT_COLS = "id,code,name,description,category,brand,end_user_price,dea
 const IMG_BUCKET = "product-images";
 const CATEGORIES = ["Switches & Sockets","Curtains","Sensors","Screens & Hubs","Locks","Intercom","Cameras",
   "Network","Audio","Remotes","KNX","Gate","Electrical","Voice Assistants","Installation","Other"];
+let myPerms = [], canCrm = false;
 let products = [], isAdmin = false, productsLoaded = false, currentProduct = null, pendingImg = null, removeImg = false;
 const thumb = url => url ? `<img class="pthumb" src="${esc(url)}" alt="" loading="lazy">` : `<span class="pthumb none">▢</span>`;
 const productImage = id => id ? (products.find(p=>p.id===id)?.image_url || null) : null;
@@ -1245,5 +1405,6 @@ $("qPdf").onclick = async ()=>{
   finally { btn.disabled = false; }
 };
 </script>
+<script src="crm-team.js?v=1"></script>
 </body>
 </html>
