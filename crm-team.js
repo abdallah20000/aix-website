@@ -43,9 +43,12 @@ function renderTasks(){
   $("taskBadge").textContent = myTasks.length || "";
   $("taskBadge").classList.toggle("late", late.length > 0);
   $("taskSummary").textContent = myTasks.length ? `${myTasks.length} مهمة مفتوحة${late.length?` — منهم ${late.length} متأخرة`:""}` : "";
-  // overdue first (already oldest first), then the rest by time, undated last
-  const list = [...late, ...myTasks.filter(t=>!late.includes(t))];
-  $("taskList").innerHTML = list.length ? list.map(t=>{
+  const end = new Date(); end.setHours(23,59,59,999);
+  const today = myTasks.filter(t=>!late.includes(t) && (!t.due_at || new Date(t.due_at) <= end));
+  const later = myTasks.filter(t=>!late.includes(t) && !today.includes(t));
+  const h = new Date().getHours(), first = (window.teamNames?.[myEmail()]) || "";
+  $("taskHello").textContent = `${h < 12 ? "صباح الخير" : "مساء الخير"}${first ? " يا " + first : ""} — مهامك النهارده`;
+  const card = t=>{
     const l = taskLeads[t.lead_id], isLate = late.includes(t);
     return `<article class="task${isLate?" late":""}" data-id="${t.id}">
       <div class="task-top"><span class="ttype">${esc(TASK_TYPES[t.type]||t.type)}</span>
@@ -57,7 +60,10 @@ function renderTasks(){
         <button type="button" class="link-btn" data-lead="${l.id}">التاريخ</button></span></div>`:""}
       ${SIMPLE_TYPES.includes(t.type) ? `<button type="button" class="primary done-btn">تم ✓</button>`
         : `<div class="sub">المهمة دي بتتقفل من الفورم الخاص بيها</div>`}
-    </article>`; }).join("")
+    </article>`; };
+  const group = (title, list, cls="") => list.length ? `<h3 class="task-group ${cls}">${title} <span class="nbadge${cls?" late":""}">${list.length}</span></h3>${list.map(card).join("")}` : "";
+  $("taskList").innerHTML = myTasks.length
+    ? group("⚠ متأخرة", late, "late") + group("النهارده", today) + (today.length || late.length ? "" : `<div class="empty task-group">مفيش مهام النهارده 👌</div>`) + group("الأيام الجاية", later)
     : `<div class="empty">مفيش مهام مفتوحة دلوقتي 👌</div>`;
   $("taskList").querySelectorAll(".done-btn").forEach(b=>b.onclick=()=>openDone(b.closest(".task").dataset.id));
   $("taskList").querySelectorAll("[data-lead]").forEach(b=>b.onclick=()=>openLeadHistory(b.dataset.lead));

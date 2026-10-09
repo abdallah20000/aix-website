@@ -139,7 +139,7 @@ tr.row:hover td{background:#fafafa}
   <header>
     <div class="brand">AIX <span style="font-size:14px;color:#fff;font-weight:500">التركيبات</span></div>
     <div class="who">
-      <a href="/crm.html" class="admin-only hidden">العملاء</a>
+      <a href="/crm.html">الرئيسية</a>
       <a href="/inventory.html" class="admin-only hidden">المخزن</a>
       <span class="email" id="userEmail" dir="ltr"></span><button class="ghost" id="logout">خروج</button>
     </div>
@@ -235,8 +235,11 @@ sb.auth.onAuthStateChange((_ev, session)=>{ setTimeout(()=>onSession(session), 0
 async function onSession(session){
   user = session?.user || null;
   if(!user){ location.replace("/crm.html"); return; }
-  const { data: role } = await sb.rpc("my_role");
-  if(role !== "admin" && role !== "installs"){
+  // permissions, not the single role: e.g. a sales person can also hold the stock job
+  const [{ data: allowed }, { data: admin }] = await Promise.all([
+    sb.rpc("has_role", { allowed:["admin","installs"] }), sb.rpc("has_role", { allowed:["admin"] })]);
+  const role = admin ? "admin" : null;
+  if(!allowed){
     $("gateMsg").innerHTML = 'الحساب ده مش مسموح له يدخل التركيبات. <a href="/crm.html">ارجع</a>';
     return;
   }

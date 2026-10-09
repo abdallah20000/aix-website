@@ -295,6 +295,9 @@ tr.row:hover td{background:#fafafa}
 .phone-search{display:flex;gap:8px;margin-bottom:8px}
 .phone-search input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:6px}
 .phone-res{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.task-group{margin:18px 0 8px;font-size:15px;display:flex;gap:8px;align-items:center}
+.task-group.late{color:var(--red)}
+.task-list .task-group{grid-column:1/-1;margin:8px 0 0}
 .task-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 .task{border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;background:#fff}
 .task.late{border-color:var(--red);border-inline-start-width:5px;background:#fff7f7}
@@ -403,7 +406,7 @@ tr.row:hover td{background:#fafafa}
     </nav>
 
     <section id="tabTasks" class="hidden">
-      <div class="sec-top"><h2>مهامي</h2><span class="sub" id="taskSummary"></span></div>
+      <div class="sec-top"><h2 id="taskHello">مهامي النهارده</h2><span class="sub" id="taskSummary"></span></div>
       <form class="phone-search" id="phoneSearch"><input id="phoneQ" type="search" inputmode="tel" dir="ltr" placeholder="دوّر برقم تليفون العميل" aria-label="رقم التليفون"><button class="line-btn">افتح</button></form>
       <div class="phone-res" id="phoneRes"></div>
       <div class="task-list" id="taskList"></div>
@@ -696,9 +699,6 @@ async function onSession(session){
       $("loginErr").textContent = "الحساب ده لسه مش متفعّل — كلّم عبدالله";
       return;
     }
-    // people with just the stock or just the installs job keep landing on their own page
-    const home = perms.length === 1 && { inventory:"/inventory.html", installs:"/installs.html" }[perms[0]];
-    if(home){ location.replace(home); return; }
   }
   myPerms = perms;
   document.querySelectorAll(".admin-only").forEach(a=>a.classList.toggle("hidden", !perms.includes("admin")));
@@ -713,8 +713,8 @@ async function onSession(session){
   if(user){
     $("userEmail").textContent = user.email;
     if(canCrm){ loadLeads(); loadSettings(); }
-    openTab(isAdmin ? "tabBoard" : canCrm ? "tabLeads" : "tabTasks");
-    loadTasks();
+    // everyone starts the day on their own tasks
+    openTab("tabTasks");
   }
 }
 
