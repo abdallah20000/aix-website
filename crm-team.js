@@ -243,7 +243,36 @@ const STATUS_EXTRA = { visit_scheduled:"معاينة متحددة" };
 const stLabel = v => STATUS_EXTRA[v] || sLabel(v);
 
 async function loadBoard(){
-  await Promise.all([loadDecisions(), loadPipeline(), loadMembers().then(loadTeamToday)]);
+  await Promise.all([loadDiscounts(), loadDecisions(), loadPipeline(), loadMembers().then(loadTeamToday)]);
+}
+// discounted quotes sales asked to send: approve or reject straight from the dashboard
+async function loadDiscounts(){
+  const { data, error } = await sb.from("quotations")
+    .select("id,quote_number,client_name,subtotal,install_amount,discount_pct,discount_amount,total,discount_requested_by,discount_requested_at,quotation_items(name,qty,unit_price,discount_pct)")
+    .eq("discount_status","pending").order("discount_requested_at");
+  if(error){ $("discList").innerHTML = `<div class="empty">مشكلة في التحميل</div>`; console.error(error); return; }
+  $("discCount").textContent = data.length || "";
+  const m = n => Number(n||0).toLocaleString("en-US",{maximumFractionDigits:0});
+  $("discList").innerHTML = data.length ? data.map(q=>{
+    const lines = (q.quotation_items||[]).filter(i=>Number(i.discount_pct) > 0);
+    const lineOff = lines.reduce((s,i)=>s + i.qty*i.unit_price*i.discount_pct/100, 0);
+    return `<article class="dec" data-id="${q.id}">
+      <h3>${esc(q.quote_number)} · <span dir="auto">${esc(q.client_name)}</span></h3>
+      <dl><dt>طالبة الموافقة</dt><dd>${esc(nameOf((q.discount_requested_by||"").toLowerCase()))}</dd>
+        ${lines.map(i=>`<dt>خصم ${m(i.discount_pct)}%</dt><dd dir="auto">${esc(i.name)} (${m(i.qty)} × ${m(i.unit_price)})</dd>`).join("")}
+        ${Number(q.discount_pct) ? `<dt>خصم على العرض كله</dt><dd>${m(q.discount_pct)}% = ${m(q.discount_amount)} جنيه</dd>` : ""}
+        <dt>قيمة الخصم كلها</dt><dd><b>${m(lineOff + Number(q.discount_amount||0))} جنيه</b></dd>
+        <dt>الإجمالي بعد الخصم</dt><dd><b>${m(q.total)} جنيه</b></dd></dl>
+      <textarea class="dec-c" rows="2" placeholder="ملاحظة (اختياري، بتظهر لها لو رفضت)"></textarea>
+      <div class="dec-opts"><button type="button" class="primary" data-ok="1">✓ موافقة</button><button type="button" class="line-btn" data-ok="0">رفض</button></div>
+    </article>`; }).join("")
+    : `<div class="empty">مفيش خصومات مستنياك 👌</div>`;
+  $("discList").querySelectorAll(".dec").forEach(card=>card.querySelectorAll("[data-ok]").forEach(b=>b.onclick=async ()=>{
+    card.querySelectorAll("button").forEach(x=>x.disabled = true);
+    const { error } = await sb.rpc("review_discount", { p_quote: card.dataset.id, p_approve: b.dataset.ok === "1", p_note: card.querySelector(".dec-c").value.trim() || null });
+    if(error){ toast(error.message); card.querySelectorAll("button").forEach(x=>x.disabled = false); return; }
+    toast(b.dataset.ok === "1" ? "وافقت على الخصم ✓" : "الخصم اترفض"); loadDiscounts();
+  }));
 }
 async function loadDecisions(){
   const { data, error } = await sb.from("decisions").select("id,kind,title,details,options,created_at").eq("status","pending").order("created_at");

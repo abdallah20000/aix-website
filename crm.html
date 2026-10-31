@@ -85,6 +85,12 @@ tr.inactive td{color:var(--muted)}
 .q-lock{display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:1px solid var(--ink);border-inline-start-width:4px;background:var(--soft);padding:12px 14px;border-radius:6px;margin-bottom:16px}
 .q-lock span{flex:1 1 260px;font-size:14px}
 .q-lock.req{border-color:var(--red)}
+.q-lock.disc{border-color:var(--amber);background:#fff8ec}
+.q-lock.disc.ok{border-color:var(--lime-dark);background:#f4faea}
+.q-lock.disc.no{border-color:var(--red);background:#fdecea}
+.q-st.dpend{border-color:var(--amber);color:var(--amber);font-weight:600}
+.q-st.dok{border-color:var(--lime-dark);color:var(--lime-dark);font-weight:600}
+.q-st.dno{border-color:var(--red);color:var(--red);font-weight:600}
 .qv input:disabled,.qv select:disabled,.qv textarea:disabled{background:var(--soft);color:#555;border-color:var(--line);cursor:not-allowed}
 
 /* quotation editor (full screen) */
@@ -396,7 +402,7 @@ tr.row:hover td{background:#fafafa}
   </header>
   <main>
     <nav class="tabs side" role="tablist" id="sideNav">
-      <button type="button" role="tab" aria-selected="false" data-tab="tabBoard" data-perm="admin">لوحة عبدالله <span class="nbadge" id="decCount"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-tab="tabBoard" data-perm="admin">لوحة عبدالله <span class="nbadge" id="decCount"></span><span class="nbadge late" id="discCount"></span></button>
       <button type="button" role="tab" aria-selected="false" data-tab="tabTasks" data-perm="*">مهامي <span class="nbadge" id="taskBadge"></span></button>
       <button type="button" role="tab" aria-selected="true" data-tab="tabLeads" data-perm="admin,crm">العملاء</button>
       <button type="button" role="tab" aria-selected="false" data-tab="tabProducts" data-perm="admin">المنتجات</button>
@@ -428,6 +434,7 @@ tr.row:hover td{background:#fafafa}
     <section id="tabBoard" class="hidden">
       <div class="sec-top"><h2>لوحة عبدالله</h2><button type="button" class="line-btn" id="boardRefresh">تحديث</button></div>
       <div class="board">
+        <div class="panel wide"><h3>خصومات مستنية موافقتك</h3><div id="discList"></div></div>
         <div class="panel wide"><h3>محتاج قرارك</h3><div id="decList"></div></div>
         <div class="panel"><h3>خط المبيعات</h3><div id="pipe"></div></div>
         <div class="panel"><h3>الفريق النهارده</h3><div id="teamToday"></div></div>
@@ -531,6 +538,10 @@ tr.row:hover td{background:#fafafa}
   <div class="qv-body">
     <div class="q-lock hidden" id="qLock"><span id="qLockMsg"></span>
       <button type="button" class="line-btn hidden" id="qReqDel">🗑 اطلب من الأدمن يمسحه</button></div>
+    <div class="q-lock disc hidden" id="qDisc"><span id="qDiscMsg"></span>
+      <button type="button" class="primary hidden" id="qDiscReq">اطلب موافقة أيمن على الخصم</button>
+      <button type="button" class="primary hidden" id="qDiscOk">✓ موافقة على الخصم</button>
+      <button type="button" class="line-btn hidden" id="qDiscNo">رفض</button></div>
     <form id="qForm" autocomplete="off">
       <div class="qv-meta">
         <div class="f"><label>العميل</label><input name="client_name" required></div>
@@ -715,6 +726,7 @@ async function onSession(session){
     if(canCrm){ loadLeads(); loadSettings(); }
     // everyone starts the day on their own tasks
     openTab("tabTasks");
+    if(isAdmin) loadDiscounts();
   }
 }
 
@@ -1027,6 +1039,7 @@ $("productForm").addEventListener("submit", async e=>{
 
 // ---------- QUOTATIONS ----------
 const Q_STATUS = { draft:"مسودة", sent:"اتبعت", accepted:"اتقبل ✓", rejected:"اترفض" };
+const DISC_BADGE = { pending:' <span class="q-st dpend">الخصم مستني موافقة</span>', approved:' <span class="q-st dok">الخصم اتوافق عليه</span>', rejected:' <span class="q-st dno">الخصم اترفض</span>' };
 const DEFAULT_TERMS = [
   "The quoted price includes installation and configuration fees.",
   "Brands : TYSH",
@@ -1046,13 +1059,13 @@ const addDays = (d,n) => { const x=new Date(d+"T00:00:00"); x.setDate(x.getDate(
 async function loadQuotes(){
   const leadId = current?.id; if(!leadId) return;
   $("qList").innerHTML = `<li class="sub">بيحمّل…</li>`;
-  const { data, error } = await sb.from("quotations").select("id,quote_number,quote_date,total,status,delete_requested_at")
+  const { data, error } = await sb.from("quotations").select("id,quote_number,quote_date,total,status,delete_requested_at,discount_status")
     .eq("lead_id",leadId).order("created_at",{ascending:false});
   if(current?.id !== leadId) return;
   if(error){ $("qList").innerHTML=""; toast("مشكلة في تحميل عروض الأسعار"); console.error(error); return; }
   $("qList").innerHTML = data.length ? data.map(q=>`<li data-id="${q.id}">
       <span><span class="num">${esc(q.quote_number)}</span> <span class="sub">· ${fmtDate(q.quote_date)}</span></span>
-      <span><b dir="ltr">${money(q.total)}</b> <span class="q-st ${esc(q.status)}">${esc(Q_STATUS[q.status]||q.status)}</span>${q.delete_requested_at?' <span class="q-st del">مطلوب مسحه</span>':""}</span></li>`).join("")
+      <span><b dir="ltr">${money(q.total)}</b> <span class="q-st ${esc(q.status)}">${esc(Q_STATUS[q.status]||q.status)}</span>${q.delete_requested_at?' <span class="q-st del">مطلوب مسحه</span>':""}${q.status==="draft" ? DISC_BADGE[q.discount_status]||"" : ""}</span></li>`).join("")
     : `<li class="sub" style="cursor:default">لسه مفيش عروض أسعار للعميل ده</li>`;
   $("qList").querySelectorAll("li[data-id]").forEach(li=>li.onclick=()=>openQuote(li.dataset.id));
 }
@@ -1077,11 +1090,12 @@ async function openQuote(id){
     ]);
     if(e1||e2){ toast("مشكلة في فتح العرض"); console.error(e1||e2); return; }
     quote = { id:q.id, quote_number:q.quote_number, lead_id:q.lead_id, status:q.status, items:items.map(({sort_order,...i})=>i),
-      delete_requested_by:q.delete_requested_by, delete_requested_at:q.delete_requested_at };
+      delete_requested_by:q.delete_requested_by, delete_requested_at:q.delete_requested_at,
+      discount_status:q.discount_status, discount_requested_by:q.discount_requested_by, discount_note:q.discount_note };
     ["client_name","client_type","quote_date","valid_until","status","notes","terms"].forEach(k=>f[k].value = q[k] ?? "");
     $("tInstPct").value = q.install_pct; setTotalDisc(q.discount_pct);
   } else {
-    quote = { id:null, quote_number:null, lead_id:current.id, status:"draft", items:[] };
+    quote = { id:null, quote_number:null, lead_id:current.id, status:"draft", items:[], discount_status:"none" };
     const today = todayStr();
     f.client_name.value = current.name; f.client_type.value = current.client_type==="dealer" ? "dealer" : "end_customer";
     f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft"; f.terms.value = DEFAULT_TERMS;
@@ -1121,6 +1135,7 @@ function updateTotals(){
   const t = calcQuote();
   $("tSub").textContent = money(t.sub); $("tInst").textContent = money(t.inst);
   $("tDisc").textContent = t.disc ? "−"+money(t.disc) : "0"; $("tTotal").textContent = money(t.total);
+  renderDiscApproval();
 }
 ["tInstPct","tDiscPct"].forEach(id=>$(id).addEventListener("input",()=>{ quoteDirty=true; updateTotals(); }));
 // when typing is allowed the discount is one box you can type in (10/20/30/40 offered as suggestions);
@@ -1255,9 +1270,11 @@ async function saveQuote(){
       room: String(i.room||"").trim() || null, qty: Number(i.qty), unit_price: Number(i.unit_price)||0,
       discount_pct: Math.min(Math.max(Number(i.discount_pct)||0,0),100), sort_order: n })) });
     if(rep.error) throw rep.error;
-  } catch(err){ toast("الحفظ فشل"); console.error(err); return false; }
+  } catch(err){ toast(/[؀-ۿ]/.test(err?.message||"") ? err.message : "الحفظ فشل"); console.error(err); return false; }
   finally { $("qSave").disabled = false; }
   quote.items = items; quote.status = f.status.value; quoteDirty = false;
+  const { data: ds } = await sb.from("quotations").select("discount_status,discount_requested_by,discount_note").eq("id",quote.id).single();
+  if(ds) Object.assign(quote, ds);
   $("qvTitle").textContent = `عرض سعر ${quote.quote_number}`; $("qDel").classList.toggle("hidden", !isAdmin);
   applyLock(); loadQuotes(); return true;
 }
@@ -1286,7 +1303,47 @@ function applyLock(){
     ? (isAdmin ? `${by} طلب مسح العرض ده — امسحه من زرار «مسح العرض» تحت.` : "طلبت مسح العرض ده، والأدمن هيمسحه.")
     : "العرض ده اتبعت للعميل، فمش ممكن يتعدل. لو محتاج تغيّر حاجة، اعمل «عرض جديد بنفس البنود» واطلب من الأدمن يمسح القديم.";
   $("qReqDel").classList.toggle("hidden", !locked || req);
+  renderDiscApproval();
 }
+// ---- discount approval: sales may give 10–40%, but a discounted quote only goes out after an admin approves it
+const quoteHasDiscount = () => !!quote && (calcQuote().discPct > 0 || quote.items.some(i=>Number(i.discount_pct) > 0));
+const needsDiscApproval = () => !isAdmin && quoteHasDiscount() && quote.discount_status !== "approved";
+function renderDiscApproval(){
+  if(!quote) return;
+  const st = quote.discount_status || "none", show = quote.status === "draft" && quoteHasDiscount() && (!isAdmin || st !== "none");
+  const who = (quote.discount_requested_by||"").split("@")[0];
+  $("qDisc").classList.toggle("hidden", !show);
+  if(!show) return;
+  $("qDisc").classList.toggle("ok", st === "approved"); $("qDisc").classList.toggle("no", st === "rejected");
+  const changed = quoteDirty && st !== "none" ? " (فيه تعديلات ما اتحفظتش، والموافقة هتتطلب تاني بعد الحفظ)" : "";
+  $("qDiscMsg").textContent = isAdmin
+    ? ({ pending:`${who} طالب موافقة على الخصم في العرض ده.`, approved:"✓ الخصم ده متوافق عليه.", rejected:"الخصم ده اترفض." }[st] || "العرض فيه خصم.")
+    : ({ pending:"⏳ مستني موافقة أيمن على الخصم. أول ما يوافق تقدر تطلّع الـ PDF.",
+         approved:"✓ أيمن وافق على الخصم، تقدر تطلّع الـ PDF." + changed,
+         rejected:`أيمن رفض الخصم${quote.discount_note ? ": " + quote.discount_note : ""}. عدّل الخصم واطلب موافقة تاني.` }[st]
+       || "العرض فيه خصم، ولازم أيمن يوافق عليه قبل ما يتبعت للعميل.");
+  $("qDiscReq").classList.toggle("hidden", isAdmin || st === "pending" || (st === "approved" && !quoteDirty));
+  $("qDiscOk").classList.toggle("hidden", !isAdmin || st === "approved" || !quote.id);
+  $("qDiscNo").classList.toggle("hidden", !isAdmin || st === "rejected" || !quote.id);
+}
+$("qDiscReq").onclick = async ()=>{
+  if(quoteDirty || !quote.id){ if(!await saveQuote()) return; }
+  const { error } = await sb.rpc("request_discount_approval", { p_quote: quote.id });
+  if(error){ toast(error.message); return; }
+  quote.discount_status = "pending"; quote.discount_requested_by = user.email;
+  renderDiscApproval(); loadQuotes(); toast("الطلب اتبعت لأيمن ✓");
+};
+async function reviewDiscount(ok){
+  if(quoteDirty || !quote.id){ if(!await saveQuote()) return; }
+  const note = ok ? null : prompt("سبب الرفض (اختياري):");
+  if(!ok && note === null) return;
+  const { error } = await sb.rpc("review_discount", { p_quote: quote.id, p_approve: ok, p_note: note });
+  if(error){ toast(error.message); return; }
+  quote.discount_status = ok ? "approved" : "rejected"; quote.discount_note = note;
+  renderDiscApproval(); loadQuotes(); toast(ok ? "وافقت على الخصم ✓" : "الخصم اترفض");
+}
+$("qDiscOk").onclick = ()=>reviewDiscount(true);
+$("qDiscNo").onclick = ()=>reviewDiscount(false);
 $("qReqDel").onclick = async ()=>{
   if(!quote?.id || !confirm(`تبعت للأدمن طلب يمسح العرض ${quote.quote_number}؟`)) return;
   const { error } = await sb.rpc("request_quote_deletion", { p_quote: quote.id });
@@ -1297,7 +1354,7 @@ $("qReqDel").onclick = async ()=>{
 $("qCopy").onclick = ()=>{
   if(!quote) return;
   const from = quote.quote_number, f = $("qForm"), today = todayStr();
-  quote = { id:null, quote_number:null, lead_id:quote.lead_id, status:"draft", items:quote.items.map(i=>({...i})) };
+  quote = { id:null, quote_number:null, lead_id:quote.lead_id, status:"draft", items:quote.items.map(i=>({...i})), discount_status:"none" };
   f.quote_date.value = today; f.valid_until.value = addDays(today,7); f.status.value = "draft";
   $("qvTitle").textContent = `عرض سعر جديد (من ${from})`; $("qDel").classList.add("hidden");
   sharedFile = null; $("qPdf").textContent = "📄 PDF وابعته";
@@ -1372,6 +1429,11 @@ async function shareOrDownload(file){
 $("qPdf").onclick = async ()=>{
   if(sharedFile){ const r = await shareOrDownload(sharedFile); if(r!=="needs-tap"){ sharedFile=null; $("qPdf").textContent="📄 PDF وابعته"; } return; }
   if(quoteDirty || !quote.id){ if(!await saveQuote()) return; }
+  if(quote.status === "draft" && needsDiscApproval()){
+    renderDiscApproval(); $("qDisc").scrollIntoView({ behavior:"smooth", block:"center" });
+    toast(quote.discount_status === "pending" ? "لسه مستني موافقة أيمن على الخصم" : "الخصم محتاج موافقة أيمن الأول — اضغط «اطلب موافقة أيمن»");
+    return;
+  }
   const btn = $("qPdf"); btn.disabled = true; btn.textContent = "بيجهز الـ PDF…";
   try {
     await loadScript(HTML2PDF_URL);
@@ -1405,6 +1467,6 @@ $("qPdf").onclick = async ()=>{
   finally { btn.disabled = false; }
 };
 </script>
-<script src="crm-team.js?v=1"></script>
+<script src="crm-team.js?v=2"></script>
 </body>
 </html>
