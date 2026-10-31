@@ -692,9 +692,28 @@ $("loginForm").addEventListener("submit", async e=>{
   const { error } = await sb.auth.signInWithPassword({ email:$("email").value.trim(), password:$("password").value });
   if(error) $("loginErr").textContent = "الإيميل أو الباسورد غلط";
 });
-$("logout").onclick = ()=> sb.auth.signOut();
-// supabase-js can deadlock if the auth callback awaits other supabase calls, so defer
-sb.auth.onAuthStateChange((_ev, session)=>{ setTimeout(()=>onSession(session), 0); });
+$("logout").onclick = ()=>{ loggingOut = true; sb.auth.signOut(); };
+// supabase-js renews the login in the background (hourly, and when the page comes back into view).
+// Re-running the whole start-up on each renewal used to reset the screen mid-work, so only start the
+// app when someone actually logs in or out. supabase-js can deadlock if the callback awaits other
+// supabase calls, so defer.
+let startedFor = null, loggingOut = false;
+sb.auth.onAuthStateChange((ev, session)=>{
+  const id = session?.user?.id || null;
+  if(id && id === startedFor){ user = session.user; return; }
+  if(!id && startedFor && !loggingOut){
+    // the login ran out on its own: keep whatever quote was open so it can be restored after logging in again
+    backupQuote();
+    setTimeout(()=>{ $("loginErr").textContent = "الجلسة خلصت — ادخل تاني. لو كنت شغال على عرض سعر، هيرجعلك."; }, 50);
+  }
+  if(!id){
+    // nothing may stay on top of the login screen (the quote was backed up above)
+    $("qv").classList.add("hidden"); quote = null; quoteDirty = false;
+    showDrawer?.(false);
+  }
+  loggingOut = false;
+  setTimeout(()=>onSession(session), 0);
+});
 async function onSession(session){
   user = session?.user || null;
   // the tasks/team screens live in crm-team.js; make sure it has loaded
@@ -703,7 +722,17 @@ async function onSession(session){
   if(user){
     // team_members isn't readable from the site, so ask the server about each permission
     const keys = ["admin","crm","inventory","installs","errands","accounts","reports"];
-    const res = await Promise.all(keys.map(k=>sb.rpc("has_role",{ allowed:[k] })));
+    let res;
+    for(let tries = 0; tries < 3; tries++){
+      res = await Promise.all(keys.map(k=>sb.rpc("has_role",{ allowed:[k] })));
+      if(!res.some(r=>r.error)) break;
+      await new Promise(r=>setTimeout(r, 1500));
+    }
+    if(res.some(r=>r.error)){
+      $("loginErr").textContent = "مفيش اتصال بالنت دلوقتي — اقفل الصفحة وافتحها تاني.";
+      $("login").classList.remove("hidden"); $("app").classList.add("hidden");
+      return;
+    }
     perms = keys.filter((k,i)=>res[i].data === true);
     if(!perms.length){
       await sb.auth.signOut();
@@ -711,7 +740,7 @@ async function onSession(session){
       return;
     }
   }
-  myPerms = perms;
+  myPerms = perms; startedFor = user?.id || null;
   document.querySelectorAll(".admin-only").forEach(a=>a.classList.toggle("hidden", !perms.includes("admin")));
   isAdmin = perms.includes("admin"); canCrm = isAdmin || perms.includes("crm"); productsLoaded = false;
   document.querySelectorAll("#sideNav [data-perm]").forEach(el=>{
@@ -1053,6 +1082,41 @@ const COMPANY = { name:"aix", tagline:"aix , Automated Intelligence eXperience",
 const HTML2PDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
 let quote = null;        // { id, quote_number, lead_id, items:[{product_id,name,description,room,qty,unit_price}] }
 let quoteDirty = false, sharedFile = null;
+// slow mobile internet: give every save a time limit instead of letting the button spin forever
+const withTimeout = (p, ms = 20000) => Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")), ms))]);
+const saveErrorText = err => {
+  const m = String(err?.message || err || "");
+  if(m === "timeout") return "النت بطيء ومفيش رد — التعديلات محفوظة على الموبايل، جرب تاني كمان شوية";
+  if(/jwt|token|401|not authenticated/i.test(m)) return "الجلسة خلصت — ادخل تاني، والعرض هيرجعلك";
+  if(/failed to fetch|network|load failed/i.test(m)) return "مفيش نت دلوقتي — التعديلات محفوظة على الموبايل، جرب تاني";
+  return /[؀-ۿ]/.test(m) ? m : "الحفظ فشل — جرب تاني";
+};
+// a copy of the quote being edited is kept on the device, so a dropped login or a closed tab doesn't lose work
+const QKEY = "aix_quote_backup";
+function backupQuote(){
+  try {
+    if(!quote || !quoteDirty || !user) return;
+    const f = $("qForm");
+    localStorage.setItem(QKEY, JSON.stringify({ at:Date.now(), email:user.email, lead_id:quote.lead_id, id:quote.id||null,
+      items:quote.items, inst:$("tInstPct").value, disc:calcQuote().discPct,
+      form:Object.fromEntries(["client_name","client_type","quote_date","valid_until","status","notes","terms"].map(k=>[k, f[k].value])) }));
+  } catch(e){}
+}
+let backupTimer = null;
+const scheduleBackup = () => { clearTimeout(backupTimer); backupTimer = setTimeout(backupQuote, 600); };
+const clearBackup = () => { try { localStorage.removeItem(QKEY); } catch(e){} };
+function offerRestore(){
+  let b = null; try { b = JSON.parse(localStorage.getItem(QKEY) || "null"); } catch(e){}
+  if(!b || !quote || b.email !== user?.email || b.lead_id !== quote.lead_id || (b.id||null) !== (quote.id||null)) return;
+  if(Date.now() - b.at > 3*86400000 || quote.status !== "draft"){ clearBackup(); return; }
+  if(!confirm("فيه تعديلات على العرض ده ما اتحفظتش المرة اللي فاتت. ترجّعها؟")){ clearBackup(); return; }
+  const f = $("qForm");
+  Object.entries(b.form).forEach(([k,v])=>{ if(f[k]) f[k].value = v; });
+  quote.items = b.items; $("tInstPct").value = b.inst; setTotalDisc(b.disc);
+  quoteDirty = true; renderQuoteItems(); toast("التعديلات رجعت — اضغط «حفظ»");
+}
+addEventListener("pagehide", backupQuote);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "hidden") backupQuote(); });
 const money = n => Number(n||0).toLocaleString("en-US",{maximumFractionDigits:2});
 const addDays = (d,n) => { const x=new Date(d+"T00:00:00"); x.setDate(x.getDate()+n); return x.toLocaleDateString("en-CA"); };
 
@@ -1107,6 +1171,8 @@ async function openQuote(id){
   fillBrands();
   quoteDirty = !quote.id; renderQuoteItems();
   $("qv").classList.remove("hidden");
+  offerRestore();
+  loadScript(HTML2PDF_URL).catch(()=>{});
 }
 function closeQuote(){
   if(quoteDirty && quote?.items.length && !confirm("فيه تعديلات ما اتحفظتش. تقفل من غير حفظ؟")) return;
@@ -1136,6 +1202,7 @@ function updateTotals(){
   $("tSub").textContent = money(t.sub); $("tInst").textContent = money(t.inst);
   $("tDisc").textContent = t.disc ? "−"+money(t.disc) : "0"; $("tTotal").textContent = money(t.total);
   renderDiscApproval();
+  if(quoteDirty) scheduleBackup();
 }
 ["tInstPct","tDiscPct"].forEach(id=>$(id).addEventListener("input",()=>{ quoteDirty=true; updateTotals(); }));
 // when typing is allowed the discount is one box you can type in (10/20/30/40 offered as suggestions);
@@ -1151,7 +1218,7 @@ $("tDiscFree").addEventListener("input", ()=>{
   $("tDiscPct").innerHTML = discOptions(clampPct($("tDiscFree").value));
   quoteDirty = true; updateTotals();
 });
-$("qForm").addEventListener("input", e=>{ if(e.target.name && e.target.name!=="client_type") quoteDirty=true; });
+$("qForm").addEventListener("input", e=>{ if(e.target.name && e.target.name!=="client_type") quoteDirty=true; scheduleBackup(); });
 
 function renderQuoteItems(){
   $("qRows").innerHTML = quote.items.length ? quote.items.map((i,n)=>`<tr data-n="${n}">
@@ -1258,20 +1325,24 @@ async function saveQuote(){
     notes: f.notes.value.trim() || null, terms: f.terms.value.trim() || null
   };
   if(!quote.id) row.created_by = user.email;
-  $("qSave").disabled = true;
+  backupQuote();
+  $("qSave").disabled = true; $("qSave").textContent = "بيحفظ…";
   try {
-    const res = quote.id ? await sb.from("quotations").update(row).eq("id",quote.id).select("id,quote_number").single()
-                         : await sb.from("quotations").insert(row).select("id,quote_number").single();
+    const { data:{ session } } = await withTimeout(sb.auth.getSession());
+    if(!session) throw new Error("not authenticated");
+    const res = await withTimeout(quote.id ? sb.from("quotations").update(row).eq("id",quote.id).select("id,quote_number").single()
+                                           : sb.from("quotations").insert(row).select("id,quote_number").single());
     if(res.error) throw res.error;
     quote.id = res.data.id; quote.quote_number = res.data.quote_number;
     // replace the lines wholesale in one transaction on the server (sales have no direct delete rights)
-    const rep = await sb.rpc("replace_quotation_items", { p_quote: quote.id, p_items: items.map((i,n)=>({
+    const rep = await withTimeout(sb.rpc("replace_quotation_items", { p_quote: quote.id, p_items: items.map((i,n)=>({
       product_id: i.product_id, name: i.name.trim(), description: i.description || null,
       room: String(i.room||"").trim() || null, qty: Number(i.qty), unit_price: Number(i.unit_price)||0,
-      discount_pct: Math.min(Math.max(Number(i.discount_pct)||0,0),100), sort_order: n })) });
+      discount_pct: Math.min(Math.max(Number(i.discount_pct)||0,0),100), sort_order: n })) }));
     if(rep.error) throw rep.error;
-  } catch(err){ toast(/[؀-ۿ]/.test(err?.message||"") ? err.message : "الحفظ فشل"); console.error(err); return false; }
-  finally { $("qSave").disabled = false; }
+  } catch(err){ toast(saveErrorText(err)); console.error(err); return false; }
+  finally { $("qSave").disabled = false; $("qSave").textContent = "حفظ"; }
+  clearBackup();
   quote.items = items; quote.status = f.status.value; quoteDirty = false;
   const { data: ds } = await sb.from("quotations").select("discount_status,discount_requested_by,discount_note").eq("id",quote.id).single();
   if(ds) Object.assign(quote, ds);
@@ -1442,7 +1513,7 @@ $("qPdf").onclick = async ()=>{
   }
   const btn = $("qPdf"); btn.disabled = true; btn.textContent = "بيجهز الـ PDF…";
   try {
-    await loadScript(HTML2PDF_URL);
+    await withTimeout(loadScript(HTML2PDF_URL), 25000);
     const el = buildPdf(), filename = `${quote.quote_number}.pdf`;
     // html2canvas offsets the capture by the page's scroll position (white space on top, rows cut off),
     // so render from the top and put the user back where they were afterwards
@@ -1469,7 +1540,7 @@ $("qPdf").onclick = async ()=>{
     const r = await shareOrDownload(file);
     if(r==="needs-tap"){ sharedFile = file; btn.textContent = "📤 اضغط عشان تبعته"; }
     else { btn.textContent = "📄 PDF وابعته"; if(r==="downloaded") toast("الـ PDF اتنزل ✓"); }
-  } catch(err){ toast("مقدرتش أعمل الـ PDF"); console.error(err); btn.textContent = "📄 PDF وابعته"; }
+  } catch(err){ toast(err?.message === "timeout" ? "النت بطيء — الـ PDF ما اتعملش، جرب تاني" : "مقدرتش أعمل الـ PDF"); console.error(err); btn.textContent = "📄 PDF وابعته"; }
   finally { btn.disabled = false; }
 };
 </script>
