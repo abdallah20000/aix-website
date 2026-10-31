@@ -1305,8 +1305,14 @@ function applyLock(){
   $("qReqDel").classList.toggle("hidden", !locked || req);
   renderDiscApproval();
 }
-// ---- discount approval: sales may give 10–40%, but a discounted quote only goes out after an admin approves it
-const quoteHasDiscount = () => !!quote && (calcQuote().discPct > 0 || quote.items.some(i=>Number(i.discount_pct) > 0));
+// ---- discount approval: up to 20% goes out freely; above that a quote only goes out after an admin approves it
+// same rule as the server: approval only when the overall discount (lines + whole quote) is above 20%
+const quoteHasDiscount = () => {
+  if(!quote) return false;
+  const gross = quote.items.reduce((s,i)=>s + (Number(i.qty)||0)*(Number(i.unit_price)||0), 0), t = calcQuote();
+  if(gross <= 0) return t.discPct > 20;
+  return 1 - t.sub*(1 - t.discPct/100)/gross > 0.2001;
+};
 const needsDiscApproval = () => !isAdmin && quoteHasDiscount() && quote.discount_status !== "approved";
 function renderDiscApproval(){
   if(!quote) return;
@@ -1321,7 +1327,7 @@ function renderDiscApproval(){
     : ({ pending:"⏳ مستني موافقة أيمن على الخصم. أول ما يوافق تقدر تطلّع الـ PDF.",
          approved:"✓ أيمن وافق على الخصم، تقدر تطلّع الـ PDF." + changed,
          rejected:`أيمن رفض الخصم${quote.discount_note ? ": " + quote.discount_note : ""}. عدّل الخصم واطلب موافقة تاني.` }[st]
-       || "العرض فيه خصم، ولازم أيمن يوافق عليه قبل ما يتبعت للعميل.");
+       || "الخصم أكتر من 20%، ولازم أيمن يوافق عليه قبل ما يتبعت للعميل.");
   $("qDiscReq").classList.toggle("hidden", isAdmin || st === "pending" || (st === "approved" && !quoteDirty));
   $("qDiscOk").classList.toggle("hidden", !isAdmin || st === "approved" || !quote.id);
   $("qDiscNo").classList.toggle("hidden", !isAdmin || st === "rejected" || !quote.id);
@@ -1431,7 +1437,7 @@ $("qPdf").onclick = async ()=>{
   if(quoteDirty || !quote.id){ if(!await saveQuote()) return; }
   if(quote.status === "draft" && needsDiscApproval()){
     renderDiscApproval(); $("qDisc").scrollIntoView({ behavior:"smooth", block:"center" });
-    toast(quote.discount_status === "pending" ? "لسه مستني موافقة أيمن على الخصم" : "الخصم محتاج موافقة أيمن الأول — اضغط «اطلب موافقة أيمن»");
+    toast(quote.discount_status === "pending" ? "لسه مستني موافقة أيمن على الخصم" : "الخصم أكتر من 20% ومحتاج موافقة أيمن — اضغط «اطلب موافقة أيمن»");
     return;
   }
   const btn = $("qPdf"); btn.disabled = true; btn.textContent = "بيجهز الـ PDF…";
