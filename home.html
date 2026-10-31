@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<title>AIX Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --ink:#111; --paper:#f4f5f2; --card:#fff; --line:#e4e6e0; --muted:#6f726b; --soft:#eceee8;
+  --lime:#8dc63f; --lime-dark:#4f7d17; --on-bg:#8dc63f; --on-ink:#000; --red:#c62828; --amber:#b26a00;
+  --chart:#4f7d17; --grid:#e4e6e0;
+  --font:"IBM Plex Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#f1f1ee; --paper:#0b0c0a; --card:#171916; --line:#2a2d27; --muted:#9ea397; --soft:#20231e;
+    --chart:#8dc63f; --grid:#2a2d27;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#f1f1ee; --paper:#0b0c0a; --card:#171916; --line:#2a2d27; --muted:#9ea397; --soft:#20231e;
+  --chart:#8dc63f; --grid:#2a2d27;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-family:var(--font);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.5;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.hidden{display:none!important}
+.brand{font-family:Roboto,sans-serif;font-weight:700;letter-spacing:1px;color:var(--lime);direction:ltr}
+
+/* ---------- login ---------- */
+#login{min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:#000;color:#fff;margin-bottom:-96px}
+.login-box{width:100%;max-width:360px}
+.login-box .brand{font-size:44px;line-height:1;text-align:right}
+.login-box p{color:#aaa;margin:8px 0 26px}
+.login-box label{display:block;font-size:13px;color:#bbb;margin:14px 0 6px}
+.login-box input{width:100%;padding:12px 14px;border:1px solid #333;background:#111;color:#fff;border-radius:8px}
+.login-box .primary{width:100%;margin-top:22px;padding:12px;border:0;border-radius:8px;background:var(--lime);color:#000;font-weight:700}
+.login-box .link{background:none;border:0;color:#bbb;margin-top:14px;padding:4px 0;text-decoration:underline;font-size:13px}
+.err{color:#ff8a80;font-size:13px;margin-top:12px;min-height:18px}
+.ok{color:#b9e27f}
+
+/* ---------- top ---------- */
+header{position:sticky;top:0;z-index:5;background:var(--paper);padding:calc(10px + env(safe-area-inset-top,0px)) 16px 0}
+.top{display:flex;align-items:center;gap:10px;max-width:1100px;margin:0 auto}
+.top .brand{font-size:22px}
+.top h1{font-size:17px;margin:0;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#aaa;display:inline-block;margin-inline-start:6px;vertical-align:middle}
+.dot.on{background:var(--lime)} .dot.off{background:var(--red)}
+.iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;padding:0}
+.iconbtn svg{width:19px;height:19px}
+.tabs{display:flex;gap:6px;max-width:1100px;margin:12px auto 0;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;padding:10px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.active{color:var(--ink);border-color:var(--lime)}
+main{max-width:1100px;margin:0 auto;padding:14px 16px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;font-size:14px}
+.chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:18px 0 10px}
+
+/* ---------- tiles ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tile{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;min-height:118px;
+  display:flex;flex-direction:column;gap:6px;text-align:start;user-select:none;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.tile .ic{width:40px;height:40px;border-radius:50%;background:var(--soft);display:grid;place-items:center}
+.tile .ic svg{width:22px;height:22px}
+.tile .nm{font-weight:600;font-size:14px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tile .st{font-size:13px;color:var(--muted);margin-top:auto}
+.tile.on{background:var(--on-bg);border-color:var(--on-bg);color:var(--on-ink)}
+.tile.on .ic{background:rgba(255,255,255,.55)}
+.tile.on .st{color:rgba(0,0,0,.65)}
+.tile.unavail{opacity:.5}
+.tile .more{position:absolute;top:8px;inset-inline-end:8px;width:30px;height:30px;border:0;border-radius:50%;background:transparent;font-size:18px;line-height:1;color:inherit}
+.tile .row{display:flex;gap:6px;margin-top:auto}
+.tile .row button{flex:1;border:1px solid var(--line);background:var(--soft);border-radius:10px;padding:6px 0;font-size:13px}
+.tile.on .row button{background:rgba(255,255,255,.5);border-color:transparent}
+.scene{min-height:auto;flex-direction:row;align-items:center;padding:10px 12px}
+.scene .ic{width:34px;height:34px}
+.scene .nm{-webkit-line-clamp:1}
+.reading .val{font-family:Roboto,sans-serif;font-size:26px;font-weight:700;direction:ltr;text-align:right;margin-top:auto}
+.reading .val small{font-size:14px;font-weight:500;color:var(--muted);margin-inline-start:3px}
+.empty{color:var(--muted);text-align:center;padding:40px 10px}
+
+/* ---------- command bar ---------- */
+#cmdbar{position:fixed;inset-inline:0;bottom:0;z-index:6;background:var(--paper);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+#cmdbar form{display:flex;gap:8px;max-width:1100px;margin:0 auto}
+#cmdbar input{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--line);background:var(--card);border-radius:999px}
+.round{width:46px;height:46px;flex:none;border-radius:50%;border:0;display:grid;place-items:center;padding:0;background:var(--ink);color:var(--paper)}
+.round svg{width:20px;height:20px}
+#mic.listening{background:var(--red);color:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(198,40,40,.18)}}
+#reply{max-width:1100px;margin:0 auto 8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:14px}
+#reply b{display:block;font-size:12px;color:var(--muted);font-weight:600}
+
+/* ---------- sheet ---------- */
+#sheetBg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10;display:flex;align-items:flex-end;justify-content:center}
+#sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow:auto}
+@media (min-width:700px){#sheetBg{align-items:center}#sheet{border-radius:20px}}
+#sheet h3{margin:0 0 4px;font-size:19px}
+#sheet .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+#sheet label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+#sheet input[type=text],#sheet input[type=url],#sheet input[type=password]{width:100%;padding:11px 12px;border:1px solid var(--line);background:var(--paper);border-radius:10px;direction:ltr;text-align:left}
+#sheet input[type=range]{width:100%;accent-color:var(--lime-dark)}
+.btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{flex:1;min-width:90px;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--soft);font-weight:600}
+.btn.primary{background:var(--lime);border-color:var(--lime);color:#000}
+.big{font-family:Roboto,sans-serif;font-size:44px;font-weight:700;text-align:center;direction:ltr;margin:6px 0}
+.big small{font-size:18px;color:var(--muted);font-weight:500}
+.hint{font-size:13px;color:var(--muted);background:var(--soft);border-radius:10px;padding:10px 12px;margin-top:12px;line-height:1.7}
+.hint code{direction:ltr;unicode-bidi:embed;background:var(--card);padding:1px 5px;border-radius:4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stats div{background:var(--soft);border-radius:10px;padding:8px 10px}
+.stats span{display:block;font-size:12px;color:var(--muted)}
+.stats b{font-family:Roboto,sans-serif;direction:ltr;display:block;text-align:right}
+.chart{position:relative;direction:ltr;margin-top:10px}
+.chart svg{width:100%;height:200px;display:block;touch-action:pan-y}
+.tip{position:absolute;top:0;background:var(--ink);color:var(--paper);font-size:12px;padding:4px 8px;border-radius:6px;pointer-events:none;white-space:nowrap;transform:translateX(-50%)}
+#toast{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:20;background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px)}
+</style>
+</head>
+<body>
+
+<!-- ======== LOGIN ======== -->
+<section id="login">
+  <form class="login-box" id="loginForm">
+    <div class="brand">AIX</div>
+    <p id="loginLede">سجّل دخول عشان تتحكم في بيتك</p>
+    <label for="email">الإيميل</label>
+    <input id="email" type="email" autocomplete="email" required>
+    <label for="password">الباسورد</label>
+    <input id="password" type="password" autocomplete="current-password" required minlength="6">
+    <button class="primary" type="submit" id="loginBtn">دخول</button>
+    <button class="link" type="button" id="toggleMode">معندكش حساب؟ اعمل حساب جديد</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+</section>
+
+<!-- ======== APP ======== -->
+<div id="app" class="hidden">
+  <header>
+    <div class="top">
+      <span class="brand">AIX</span>
+      <h1 id="homeName">بيتي <span class="dot" id="dot"></span></h1>
+      <button class="iconbtn" id="settingsBtn" aria-label="الإعدادات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button class="iconbtn" id="logout" aria-label="خروج"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="devices" class="active">الأجهزة</button>
+      <button data-tab="readings">القراءات</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="notConnected" class="empty hidden"></div>
+
+    <section id="tab-devices">
+      <div class="chips" id="areaChips"></div>
+      <div id="scenesWrap" class="hidden">
+        <h2 class="sec">المشاهد</h2>
+        <div class="grid" id="scenes"></div>
+      </div>
+      <div id="devices"></div>
+    </section>
+
+    <section id="tab-readings" class="hidden">
+      <div id="readings"></div>
+    </section>
+  </main>
+
+  <div id="cmdbar">
+    <div id="reply" class="hidden"></div>
+    <form id="cmdForm" autocomplete="off">
+      <button type="button" class="round" id="mic" aria-label="أمر صوتي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></button>
+      <input id="cmd" placeholder="اكتب أمر… مثلاً: شغّل نور الصالة">
+      <button type="submit" class="round" aria-label="نفّذ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+    </form>
+  </div>
+</div>
+
+<div id="sheetBg" class="hidden"><div id="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="toast" class="hidden"></div>
+
+<script>
+const SUPABASE_URL = "https://xenrnhgxwhujyvtpwmsk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_PWiz7ybQJDngH5Ox3vkx6g_GuCQnQ1R";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+let user = null;
+function toast(msg, ms=2600){ const t=$("toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.add("hidden"), ms); }
+
+/* ================= AUTH ================= */
+let signUpMode = false;
+$("toggleMode").onclick = ()=>{
+  signUpMode = !signUpMode;
+  $("loginBtn").textContent = signUpMode ? "اعمل الحساب" : "دخول";
+  $("toggleMode").textContent = signUpMode ? "عندك حساب؟ سجّل دخول" : "معندكش حساب؟ اعمل حساب جديد";
+  $("loginLede").textContent = signUpMode ? "اعمل حساب بإيميلك وباسورد" : "سجّل دخول عشان تتحكم في بيتك";
+  $("password").autocomplete = signUpMode ? "new-password" : "current-password";
+  $("loginErr").textContent = "";
+};
+$("loginForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const err = $("loginErr"); err.className="err"; err.textContent="";
+  const email = $("email").value.trim(), password = $("password").value;
+  $("loginBtn").disabled = true;
+  try{
+    if(signUpMode){
+      const { data, error } = await sb.auth.signUp({ email, password, options:{ emailRedirectTo: location.origin + location.pathname } });
+      if(error) err.textContent = error.message.includes("registered") ? "الإيميل ده عليه حساب بالفعل — سجّل دخول" : "مقدرناش نعمل الحساب: " + error.message;
+      else if(!data.session){ err.className="err ok"; err.textContent = "بعتنالك رسالة على الإيميل، افتحها ودوس على اللينك عشان تفعّل الحساب"; }
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) err.textContent = error.message.includes("confirm") ? "لازم تفعّل الحساب من الرسالة اللي على الإيميل الأول" : "الإيميل أو الباسورد غلط";
+    }
+  } finally { $("loginBtn").disabled = false; }
+});
+$("logout").onclick = async ()=>{ ha.close(); await sb.auth.signOut(); };
+// supabase-js can deadlock if the auth callback awaits other supabase calls, so defer
+sb.auth.onAuthStateChange((_ev, session)=>{ setTimeout(()=>onSession(session), 0); });
+
+function onSession(session){
+  const was = user?.id;
+  user = session?.user || null;
+  $("login").classList.toggle("hidden", !!user);
+  $("app").classList.toggle("hidden", !user);
+  if(!user){ ha.close(); return; }
+  if(was === user.id && ha.ws) return; // token refresh, nothing to do
+  connectFromProfile();
+}
+
+/* ================= HOME ASSISTANT LINK ================= */
+// Each customer's Home Assistant address and access token live on their own account (user_metadata).
+function haConf(){ const m = user?.user_metadata || {}; return { url: m.ha_url || "", token: m.ha_token || "", name: m.home_name || "" }; }
+function connectFromProfile(){
+  const c = haConf();
+  $("homeName").firstChild.textContent = (c.name || "بيتي") + " ";
+  if(!c.url || !c.token){ showNotConnected("first"); openSettings(true); return; }
+  ha.connect(c.url, c.token);
+}
+function showNotConnected(kind, detail){
+  const box = $("notConnected");
+  box.classList.remove("hidden");
+  $("tab-devices").classList.add("hidden"); $("tab-readings").classList.add("hidden");
+  box.innerHTML = kind==="first"
+    ? `اربط الحساب بالـ Home Assistant بتاع بيتك عشان تظهر الأجهزة.<br><br><button class="btn primary" onclick="openSettings()">اربط دلوقتي</button>`
+    : `مش قادرين نوصل للـ Home Assistant.<br><small>${esc(detail||"")}</small><br><br><button class="btn" onclick="ha.reconnectNow()">حاول تاني</button> <button class="btn" onclick="openSettings()">الإعدادات</button>`;
+}
+function hideNotConnected(){ $("notConnected").classList.add("hidden"); showTab(currentTab); }
+
+function normUrl(u){
+  u = String(u||"").trim().replace(/\/+$/,"").replace(/\/lovelace.*$/,"");
+  if(u && !/^https?:\/\//i.test(u)) u = "https://" + u;
+  return u;
+}
+
+const ha = {
+  ws:null, id:1, pending:new Map(), url:"", token:"", retry:0, timer:null, wanted:false, ready:false,
+  connect(url, token){
+    this.close(); this.url = normUrl(url); this.token = token; this.wanted = true; this.open();
+  },
+  open(){
+    setDot("");
+    if(location.protocol==="https:" && this.url.startsWith("http:")){
+      showNotConnected("err","العنوان لازم يبدأ بـ https (زي عنوان Nabu Casa) عشان المتصفح يسمح بالاتصال"); setDot("off"); return;
+    }
+    let ws;
+    try{ ws = new WebSocket(this.url.replace(/^http/i,"ws") + "/api/websocket"); }
+    catch(e){ showNotConnected("err", "العنوان مش صحيح"); setDot("off"); return; }
+    this.ws = ws; this.ready = false;
+    ws.onmessage = ev => this.onMsg(JSON.parse(ev.data));
+    ws.onclose = () => {
+      if(this.ws !== ws) return;
+      this.ws = null; this.ready = false; setDot("off");
+      for(const p of this.pending.values()) p.reject(new Error("closed"));
+      this.pending.clear();
+      if(!this.wanted) return;
+      if(!Object.keys(store.states).length) showNotConnected("err", "اتأكد إن العنوان صح وإن الـ Home Assistant شغال وواصل بالنت");
+      const wait = Math.min(30000, 1000 * 2 ** this.retry++);
+      clearTimeout(this.timer); this.timer = setTimeout(()=>this.open(), wait);
+    };
+  },
+  reconnectNow(){ clearTimeout(this.timer); this.retry = 0; if(this.ws) this.ws.close(); else this.open(); },
+  close(){ this.wanted = false; clearTimeout(this.timer); const w=this.ws; this.ws=null; this.ready=false; if(w) w.close(); store.reset(); },
+  async onMsg(m){
+    if(m.type==="auth_required"){ this.ws.send(JSON.stringify({type:"auth", access_token:this.token})); return; }
+    if(m.type==="auth_invalid"){ this.wanted = false; this.ws.close(); setDot("off"); showNotConnected("err","الـ Token غلط أو اتلغى — اعمل واحد جديد من صفحة البروفايل في Home Assistant"); return; }
+    if(m.type==="auth_ok"){ this.retry = 0; this.ready = true; setDot("on"); await store.load(); return; }
+    if(m.type==="event" && m.event?.event_type==="state_changed"){ store.onChange(m.event.data); return; }
+    if(m.type==="result"){
+      const p = this.pending.get(m.id); if(!p) return; this.pending.delete(m.id);
+      m.success ? p.resolve(m.result) : p.reject(new Error(m.error?.message || "error"));
+    }
+  },
+  send(msg){
+    return new Promise((resolve, reject)=>{
+      if(!this.ws || !this.ready) return reject(new Error("مش متصل بالبيت دلوقتي"));
+      const id = this.id++; this.pending.set(id, {resolve, reject});
+      this.ws.send(JSON.stringify({ id, ...msg }));
+    });
+  },
+  call(domain, service, entity_id, data={}){
+    return this.send({ type:"call_service", domain, service, service_data:data, target: entity_id ? { entity_id } : undefined })
+      .catch(e=>{ toast("حصلت مشكلة: " + e.message); throw e; });
+  }
+};
+function setDot(s){ $("dot").className = "dot " + s; }
+
+/* ================= STATE ================= */
+const CONTROL = ["light","switch","fan","cover","climate","lock","media_player","input_boolean","vacuum","humidifier","water_heater","button","siren","valve"];
+const SCENES = ["scene","script"];
+const store = {
+  states:{}, areas:[], entArea:{}, hidden:new Set(),
+  reset(){ this.states={}; this.areas=[]; this.entArea={}; this.hidden=new Set(); },
+  async load(){
+    const [states, areas, ents, devs] = await Promise.all([
+      ha.send({type:"get_states"}),
+      ha.send({type:"config/area_registry/list"}).catch(()=>[]),
+      ha.send({type:"config/entity_registry/list"}).catch(()=>[]),
+      ha.send({type:"config/device_registry/list"}).catch(()=>[]),
+    ]);
+    const devArea = {}; devs.forEach(d=>{ devArea[d.id] = d.area_id; });
+    this.entArea = {}; this.hidden = new Set();
+    ents.forEach(e=>{
+      this.entArea[e.entity_id] = e.area_id || devArea[e.device_id] || null;
+      if(e.hidden_by || e.disabled_by || e.entity_category) this.hidden.add(e.entity_id);
+    });
+    this.areas = areas.map(a=>({ id:a.area_id, name:a.name })).sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+    this.states = {}; states.forEach(s=>{ this.states[s.entity_id] = s; });
+    await ha.send({type:"subscribe_events", event_type:"state_changed"});
+    hideNotConnected(); render();
+  },
+  onChange(d){
+    if(d.new_state) this.states[d.entity_id] = d.new_state; else delete this.states[d.entity_id];
+    updateTile(d.entity_id);
+    if(sheetEid === d.entity_id) refreshSheet();
+  },
+  list(domains){
+    return Object.values(this.states).filter(s=>domains.includes(dom(s.entity_id)) && !this.hidden.has(s.entity_id));
+  }
+};
+const dom = eid => eid.split(".")[0];
+const nameOf = s => s.attributes.friendly_name || s.entity_id;
+const areaName = id => store.areas.find(a=>a.id===id)?.name || "";
+
+/* ================= ICONS ================= */
+const P = {
+  light:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
+  switch:'<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>',
+  fan:'<path d="M12 12c-3-5-1-9 2-9 2 0 3 2 1 5M12 12c5-3 9-1 9 2 0 2-2 3-5 1M12 12c3 5 1 9-2 9-2 0-3-2-1-5M12 12c-5 3-9 1-9-2 0-2 2-3 5-1"/>',
+  cover:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 8h18M3 13h18M12 18v3"/>',
+  climate:'<path d="M14 14.8V4a2 2 0 1 0-4 0v10.8a4 4 0 1 0 4 0z"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  media_player:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/>',
+  vacuum:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
+  scene:'<path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/>',
+  script:'<path d="M5 3l14 9-14 9z"/>',
+  sensor:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  temp:'<path d="M14 14.8V4a2 2 0 1 0-4 0v10.8a4 4 0 1 0 4 0z"/>',
+  humidity:'<path d="M12 2.7l5.7 5.7a8 8 0 1 1-11.3 0z"/>',
+  power:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+  battery:'<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/>',
+  door:'<path d="M4 21h16M6 21V3h12v18M14 12h.01"/>',
+  motion:'<circle cx="13" cy="4" r="2"/><path d="M8 21l3-7 3 3v4M7 12l3-3 4 1 3 3"/>',
+  button:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
+};
+function iconFor(s){
+  const d = dom(s.entity_id), dc = s.attributes.device_class;
+  let k = d;
+  if(d==="sensor"||d==="binary_sensor"){
+    k = {temperature:"temp",humidity:"humidity",power:"power",energy:"power",current:"power",voltage:"power",battery:"battery",
+         door:"door",window:"door",garage_door:"door",opening:"door",motion:"motion",occupancy:"motion",presence:"motion"}[dc] || "sensor";
+  }
+  if(d==="switch" && dc==="outlet") k="switch";
+  if(!P[k]) k = d==="input_boolean"||d==="humidifier"||d==="water_heater"||d==="siren"||d==="valve" ? "switch" : "sensor";
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[k]}</svg>`;
+}
+
+/* ================= STATE TEXT ================= */
+const AR = { on:"شغّال", off:"مقفول", open:"مفتوح", closed:"مقفول", opening:"بيفتح", closing:"بيقفل", locked:"مقفول بالقفل", unlocked:"مفتوح",
+  unavailable:"مش متاح", unknown:"—", playing:"شغّال", paused:"متوقف", idle:"مستني", standby:"استعداد", cleaning:"بينضّف", docked:"في الشاحن",
+  returning:"راجع للشاحن", heat:"تدفئة", cool:"تبريد", auto:"أوتوماتيك", dry:"تجفيف", fan_only:"مروحة", heat_cool:"تدفئة/تبريد", jammed:"معلّق" };
+function isOn(s){
+  const st = s.state, d = dom(s.entity_id);
+  if(d==="climate") return st!=="off" && st!=="unavailable";
+  if(d==="cover"||d==="valve") return st==="open"||st==="opening";
+  if(d==="lock") return st==="unlocked";
+  if(d==="media_player") return !["off","standby","unavailable","unknown"].includes(st);
+  if(d==="vacuum") return st==="cleaning";
+  return st==="on";
+}
+function stateText(s){
+  const d = dom(s.entity_id), a = s.attributes;
+  if(s.state==="unavailable") return AR.unavailable;
+  if(d==="light" && s.state==="on" && a.brightness!=null) return "شغّال · " + Math.round(a.brightness/2.55) + "%";
+  if(d==="climate"){
+    const cur = a.current_temperature!=null ? a.current_temperature + "°" : "";
+    return s.state==="off" ? "مقفول" + (cur?" · "+cur:"") : (AR[s.state]||s.state) + (a.temperature!=null?" · "+a.temperature+"°":"");
+  }
+  if(d==="cover" && a.current_position!=null && s.state!=="closed") return "مفتوح " + a.current_position + "%";
+  if(d==="fan" && s.state==="on" && a.percentage) return "شغّال · " + a.percentage + "%";
+  if(d==="button") return "اضغط";
+  return AR[s.state] || s.state;
+}
+
+/* ================= RENDER ================= */
+let currentTab = "devices", currentArea = "all";
+$("tabs").onclick = e=>{ const b=e.target.closest("button"); if(b) showTab(b.dataset.tab); };
+function showTab(t){
+  currentTab = t;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===t));
+  if(!$("notConnected").classList.contains("hidden")) return;
+  $("tab-devices").classList.toggle("hidden", t!=="devices");
+  $("tab-readings").classList.toggle("hidden", t!=="readings");
+}
+function render(){ renderChips(); renderDevices(); renderReadings(); }
+function renderChips(){
+  const used = new Set(store.list(CONTROL).map(s=>store.entArea[s.entity_id]).filter(Boolean));
+  const areas = store.areas.filter(a=>used.has(a.id));
+  if(currentArea!=="all" && !areas.some(a=>a.id===currentArea)) currentArea="all";
+  $("areaChips").innerHTML = [`<button class="chip ${currentArea==="all"?"active":""}" data-a="all">الكل</button>`]
+    .concat(areas.map(a=>`<button class="chip ${currentArea===a.id?"active":""}" data-a="${esc(a.id)}">${esc(a.name)}</button>`)).join("");
+  $("areaChips").classList.toggle("hidden", !areas.length);
+}
+$("areaChips").onclick = e=>{ const b=e.target.closest(".chip"); if(!b) return; currentArea=b.dataset.a; renderChips(); renderDevices(); };
+
+function tileHTML(s){
+  const d = dom(s.entity_id), on = isOn(s), un = s.state==="unavailable";
+  const extra = (d==="cover"||d==="valve")
+    ? `<div class="row"><button data-act="open">فتح</button><button data-act="stop">وقف</button><button data-act="close">قفل</button></div>`
+    : (d==="climate" ? `<div class="row"><button data-act="down">−</button><button data-act="up">+</button></div>` : "");
+  return `<div class="tile ${on?"on":""} ${un?"unavail":""}" data-eid="${esc(s.entity_id)}" role="button" tabindex="0">
+    <button class="more" data-act="more" aria-label="تفاصيل">⋯</button>
+    <div class="ic">${iconFor(s)}</div>
+    <div class="nm">${esc(nameOf(s))}</div>
+    <div class="st">${esc(stateText(s))}</div>${extra}</div>`;
+}
+function renderDevices(){
+  const sc = store.list(SCENES).filter(s=>currentArea==="all" || store.entArea[s.entity_id]===currentArea);
+  $("scenesWrap").classList.toggle("hidden", !sc.length);
+  $("scenes").innerHTML = sc.sort(byName).map(s=>`<div class="tile scene" data-eid="${esc(s.entity_id)}" role="button" tabindex="0"><div class="ic">${iconFor(s)}</div><div class="nm">${esc(nameOf(s))}</div></div>`).join("");
+  let list = store.list(CONTROL);
+  if(currentArea!=="all") list = list.filter(s=>store.entArea[s.entity_id]===currentArea);
+  if(!list.length){ $("devices").innerHTML = `<div class="empty">مفيش أجهزة لسه. لو ربطت Tuya في Home Assistant هتظهر هنا لوحدها.</div>`; return; }
+  // group by area
+  const groups = new Map();
+  list.sort(byName).forEach(s=>{ const a = store.entArea[s.entity_id] || ""; if(!groups.has(a)) groups.set(a, []); groups.get(a).push(s); });
+  const order = [...groups.keys()].sort((a,b)=> (a===""?1:0)-(b===""?1:0) || areaName(a).localeCompare(areaName(b),"ar"));
+  $("devices").innerHTML = order.map(a=>`<h2 class="sec">${esc(a ? areaName(a) : (groups.size>1?"أجهزة تانية":"الأجهزة"))}</h2><div class="grid">${groups.get(a).map(tileHTML).join("")}</div>`).join("");
+}
+const byName = (a,b)=>nameOf(a).localeCompare(nameOf(b),"ar");
+
+function readingList(){
+  return Object.values(store.states).filter(s=>{
+    if(store.hidden.has(s.entity_id)) return false;
+    const d = dom(s.entity_id);
+    if(d==="binary_sensor") return true;
+    return d==="sensor" && s.attributes.unit_of_measurement && !isNaN(parseFloat(s.state));
+  });
+}
+function readingHTML(s){
+  const d = dom(s.entity_id), u = s.attributes.unit_of_measurement || "";
+  const val = d==="binary_sensor" ? `<div class="st">${esc(binText(s))}</div>` : `<div class="val">${esc(fmt(s.state))}<small>${esc(u)}</small></div>`;
+  const on = d==="binary_sensor" && s.state==="on";
+  return `<div class="tile reading ${on?"on":""}" data-eid="${esc(s.entity_id)}" role="button" tabindex="0"><div class="ic">${iconFor(s)}</div><div class="nm">${esc(nameOf(s))}</div>${val}</div>`;
+}
+function binText(s){
+  const dc = s.attributes.device_class, on = s.state==="on";
+  if(s.state==="unavailable") return AR.unavailable;
+  if(["door","window","garage_door","opening"].includes(dc)) return on?"مفتوح":"مقفول";
+  if(["motion","occupancy","presence"].includes(dc)) return on?"فيه حركة":"مفيش حركة";
+  if(dc==="moisture") return on?"فيه مية!":"ناشف";
+  if(dc==="smoke"||dc==="gas") return on?"تحذير!":"تمام";
+  return on?"شغّال":"مقفول";
+}
+const fmt = v => { const n = parseFloat(v); return isNaN(n) ? v : (Math.abs(n)>=100 ? Math.round(n) : Math.round(n*10)/10).toLocaleString("en-US"); };
+function renderReadings(){
+  const list = readingList();
+  if(!list.length){ $("readings").innerHTML = `<div class="empty">مفيش حساسات لسه.</div>`; return; }
+  const groups = new Map();
+  list.sort(byName).forEach(s=>{ const a = store.entArea[s.entity_id] || ""; if(!groups.has(a)) groups.set(a, []); groups.get(a).push(s); });
+  const order = [...groups.keys()].sort((a,b)=> (a===""?1:0)-(b===""?1:0) || areaName(a).localeCompare(areaName(b),"ar"));
+  $("readings").innerHTML = order.map(a=>`<h2 class="sec">${esc(a ? areaName(a) : (groups.size>1?"تانية":"القراءات"))}</h2><div class="grid">${groups.get(a).map(readingHTML).join("")}</div>`).join("");
+}
+function updateTile(eid){
+  const s = store.states[eid];
+  document.querySelectorAll(`[data-eid="${CSS.escape(eid)}"]`).forEach(el=>{
+    if(!s){ el.remove(); return; }
+    const html = el.classList.contains("reading") ? readingHTML(s) : el.classList.contains("scene") ? null : tileHTML(s);
+    if(html){ const t=document.createElement("div"); t.innerHTML=html; el.replaceWith(t.firstElementChild); }
+  });
+  if(s && !document.querySelector(`[data-eid="${CSS.escape(eid)}"]`) && (CONTROL.includes(dom(eid))||SCENES.includes(dom(eid))||dom(eid).includes("sensor"))) render();
+}
+
+/* ================= TILE ACTIONS ================= */
+document.addEventListener("click", e=>{
+  const tile = e.target.closest(".tile"); if(!tile || !tile.dataset.eid) return;
+  const eid = tile.dataset.eid, s = store.states[eid]; if(!s) return;
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if(act==="more" || tile.classList.contains("reading")){ openEntity(eid); return; }
+  const d = dom(eid);
+  if(act){
+    if(act==="open") ha.call(d, d==="valve"?"open_valve":"open_cover", eid);
+    if(act==="close") ha.call(d, d==="valve"?"close_valve":"close_cover", eid);
+    if(act==="stop") ha.call(d, d==="valve"?"stop_valve":"stop_cover", eid);
+    if(act==="up"||act==="down") stepTemp(s, act==="up"?1:-1);
+    return;
+  }
+  primary(s);
+});
+document.addEventListener("keydown", e=>{ if((e.key==="Enter"||e.key===" ") && e.target.classList?.contains("tile")){ e.preventDefault(); e.target.click(); } });
+
+function primary(s){
+  const eid = s.entity_id, d = dom(eid);
+  if(s.state==="unavailable"){ toast("الجهاز ده مش متاح دلوقتي"); return; }
+  if(d==="scene"||d==="script") return ha.call(d, "turn_on", eid).then(()=>toast("اتنفّذ: " + nameOf(s)));
+  if(d==="button") return ha.call("button","press",eid).then(()=>toast("اتضغط"));
+  if(d==="lock") return s.state==="locked" ? (confirm("تفتح " + nameOf(s) + "؟") && ha.call("lock","unlock",eid)) : ha.call("lock","lock",eid);
+  if(d==="cover"||d==="valve") return ha.call(d, isOn(s) ? (d==="valve"?"close_valve":"close_cover") : (d==="valve"?"open_valve":"open_cover"), eid);
+  if(d==="climate") return ha.call("climate", s.state==="off" ? "turn_on" : "turn_off", eid);
+  if(d==="vacuum") return ha.call("vacuum", s.state==="cleaning" ? "return_to_base" : "start", eid);
+  if(d==="media_player") return ha.call("media_player", isOn(s) ? "turn_off" : "turn_on", eid);
+  ha.call("homeassistant", "toggle", eid);
+}
+function stepTemp(s, dir){
+  const a = s.attributes, step = a.target_temp_step || (a.temperature_unit==="°F"?1:0.5);
+  const cur = a.temperature ?? a.current_temperature ?? 24;
+  const t = Math.max(a.min_temp ?? 7, Math.min(a.max_temp ?? 35, Math.round((cur + dir*step)*10)/10));
+  ha.call("climate","set_temperature", s.entity_id, { temperature:t });
+}
+
+/* ================= SHEET ================= */
+let sheetEid = null;
+function openSheet(html){ $("sheet").innerHTML = html; $("sheetBg").classList.remove("hidden"); }
+function closeSheet(){ $("sheetBg").classList.add("hidden"); sheetEid = null; }
+$("sheetBg").addEventListener("click", e=>{ if(e.target.id==="sheetBg" || e.target.closest("[data-close]")) closeSheet(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeSheet(); });
+
+function openEntity(eid){ sheetEid = eid; refreshSheet(true); }
+function refreshSheet(first){
+  const s = store.states[sheetEid]; if(!s){ closeSheet(); return; }
+  const d = dom(s.entity_id), a = s.attributes;
+  const sub = [areaName(store.entArea[s.entity_id]), stateText(s)].filter(Boolean).join(" · ");
+  if(!first && document.activeElement?.type==="range") return; // don't fight a slider while dragging
+  let body = "";
+  if(d==="sensor"||d==="binary_sensor"){
+    const u = a.unit_of_measurement || "";
+    body = d==="sensor" ? `<div class="big">${esc(fmt(s.state))}<small> ${esc(u)}</small></div>` : `<div class="big" style="font-size:28px">${esc(binText(s))}</div>`;
+    body += `<div id="hist"><div class="sub">بيحمّل آخر 24 ساعة…</div></div>`;
+  } else {
+    if(d==="light" && s.state==="on" && a.brightness!=null)
+      body += `<label>الإضاءة <b id="bv">${Math.round(a.brightness/2.55)}%</b></label><input type="range" min="1" max="100" value="${Math.round(a.brightness/2.55)}" data-svc="light.turn_on" data-key="brightness_pct">`;
+    if(d==="fan" && a.percentage!=null)
+      body += `<label>السرعة <b id="bv">${a.percentage}%</b></label><input type="range" min="0" max="100" step="${a.percentage_step||1}" value="${a.percentage}" data-svc="fan.set_percentage" data-key="percentage">`;
+    if(d==="cover" && a.current_position!=null)
+      body += `<label>الفتح <b id="bv">${a.current_position}%</b></label><input type="range" min="0" max="100" value="${a.current_position}" data-svc="cover.set_cover_position" data-key="position">`;
+    if(d==="media_player" && a.volume_level!=null)
+      body += `<label>الصوت <b id="bv">${Math.round(a.volume_level*100)}%</b></label><input type="range" min="0" max="100" value="${Math.round(a.volume_level*100)}" data-svc="media_player.volume_set" data-key="volume_level" data-scale="0.01">`;
+    if(d==="climate"){
+      body += `<div class="big">${a.temperature ?? "—"}<small>°</small></div><div class="sub" style="text-align:center">درجة الحرارة دلوقتي ${a.current_temperature ?? "—"}°</div>
+        <div class="btns"><button class="btn" data-x="down">−</button><button class="btn" data-x="up">+</button></div>`;
+      if(a.hvac_modes?.length) body += `<label>الوضع</label><div class="btns">${a.hvac_modes.map(m=>`<button class="btn ${m===s.state?"primary":""}" data-mode="${esc(m)}">${esc(AR[m]||m)}</button>`).join("")}</div>`;
+    }
+    if(d==="media_player") body += `<div class="btns"><button class="btn" data-mp="media_previous_track">⏮</button><button class="btn" data-mp="media_play_pause">⏯</button><button class="btn" data-mp="media_next_track">⏭</button></div>`;
+    if(d!=="button") body += `<div class="btns"><button class="btn primary" data-x="primary">${isOn(s) ? (d==="cover"?"اقفل":d==="lock"?"اقفل بالقفل":"اطفي") : (d==="cover"?"افتح":d==="lock"?"افتح القفل":"شغّل")}</button></div>`;
+    else body += `<div class="btns"><button class="btn primary" data-x="primary">اضغط</button></div>`;
+    if(d==="climate" || d==="light" || d==="switch") body += `<div id="hist"></div>`;
+  }
+  openSheet(`<h3>${esc(nameOf(s))}</h3><div class="sub">${esc(sub)}</div>${body}<div class="btns"><button class="btn" data-close>قفل</button></div>`);
+  if(first && (d==="sensor"||d==="binary_sensor"||d==="climate")) loadHistory(s);
+}
+$("sheet").addEventListener("input", e=>{ if(e.target.type==="range" && $("bv")) $("bv").textContent = e.target.value + "%"; });
+$("sheet").addEventListener("change", e=>{
+  const r = e.target; if(r.type!=="range" || !sheetEid) return;
+  const [domain, service] = r.dataset.svc.split(".");
+  ha.call(domain, service, sheetEid, { [r.dataset.key]: Number(r.value) * Number(r.dataset.scale||1) });
+  r.blur();
+});
+$("sheet").addEventListener("click", e=>{
+  const s = store.states[sheetEid]; if(!s) return;
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.x==="primary") primary(s);
+  if(b.dataset.x==="up"||b.dataset.x==="down") stepTemp(s, b.dataset.x==="up"?1:-1);
+  if(b.dataset.mode) ha.call("climate","set_hvac_mode", sheetEid, { hvac_mode:b.dataset.mode });
+  if(b.dataset.mp) ha.call("media_player", b.dataset.mp, sheetEid);
+});
+
+/* ================= HISTORY + CHART ================= */
+async function loadHistory(s){
+  const eid = s.entity_id, d = dom(eid), end = new Date(), start = new Date(end - 24*3600e3);
+  const isNum = d==="sensor" || d==="climate";
+  let res;
+  try{
+    res = await ha.send({ type:"history/history_during_period", start_time:start.toISOString(), end_time:end.toISOString(),
+      entity_ids:[eid], minimal_response:d!=="climate", no_attributes:d!=="climate", significant_changes_only:false });
+  }catch(e){ if($("hist")) $("hist").innerHTML = `<div class="sub">مقدرناش نجيب السجل</div>`; return; }
+  if(sheetEid!==eid || !$("hist")) return;
+  const raw = res[eid] || [];
+  const ts = x => ((x.lu ?? x.lc) * 1000);
+  if(!isNum){
+    const changes = raw.filter(x=>x.s==="on").length;
+    const label = ["motion","occupancy","presence"].includes(s.attributes.device_class) ? "مرة اتلقطت حركة" : ["door","window","opening","garage_door"].includes(s.attributes.device_class) ? "مرة اتفتح" : "مرة اشتغل";
+    $("hist").innerHTML = `<div class="stats" style="grid-template-columns:1fr"><div><span>آخر 24 ساعة</span><b>${changes} ${label}</b></div></div>`;
+    return;
+  }
+  const pts = raw.map(x=>({ t: ts(x), v: parseFloat(d==="climate" ? x.a?.current_temperature : x.s) })).filter(p=>!isNaN(p.v) && !isNaN(p.t));
+  if(pts.length < 2){ $("hist").innerHTML = `<div class="sub">مفيش قراءات كفاية في آخر 24 ساعة</div>`; return; }
+  pts.push({ t:end.getTime(), v:pts[pts.length-1].v });
+  const vals = pts.map(p=>p.v), min = Math.min(...vals), max = Math.max(...vals);
+  // time-weighted average, so a value held for hours counts more than a blip
+  let area=0; for(let i=1;i<pts.length;i++) area += pts[i-1].v * (pts[i].t - pts[i-1].t);
+  const avg = area / (pts[pts.length-1].t - pts[0].t || 1);
+  const u = d==="climate" ? "°" : (s.attributes.unit_of_measurement || "");
+  const total = s.attributes.state_class==="total_increasing" || s.attributes.state_class==="total";
+  const stats = total
+    ? `<div><span>استهلاك آخر 24 ساعة</span><b>${fmt(Math.max(0, vals[vals.length-1]-vals[0]))} ${esc(u)}</b></div><div><span>من 24 ساعة</span><b>${fmt(vals[0])}</b></div><div><span>دلوقتي</span><b>${fmt(vals[vals.length-1])}</b></div>`
+    : `<div><span>أقل</span><b>${fmt(min)} ${esc(u)}</b></div><div><span>المتوسط</span><b>${fmt(avg)} ${esc(u)}</b></div><div><span>أعلى</span><b>${fmt(max)} ${esc(u)}</b></div>`;
+  $("hist").innerHTML = `<div class="sub" style="margin:14px 0 0">آخر 24 ساعة</div><div class="chart" id="chart"></div><div class="stats">${stats}</div>`;
+  drawChart($("chart"), pts, u, start.getTime(), end.getTime());
+}
+function drawChart(el, pts, unit, t0, t1){
+  const W=600, H=200, L=8, R=44, T=12, B=24;
+  let lo = Math.min(...pts.map(p=>p.v)), hi = Math.max(...pts.map(p=>p.v));
+  if(hi-lo < 1e-9){ hi += 1; lo -= 1; }
+  const pad = (hi-lo)*0.12; lo -= pad; hi += pad;
+  const x = t => L + (t-t0)/(t1-t0)*(W-L-R), y = v => T + (hi-v)/(hi-lo)*(H-T-B);
+  // step line: a sensor holds its value until the next reading
+  let d = `M${x(pts[0].t).toFixed(1)},${y(pts[0].v).toFixed(1)}`;
+  for(let i=1;i<pts.length;i++) d += `H${x(pts[i].t).toFixed(1)}V${y(pts[i].v).toFixed(1)}`;
+  const ticks = [0,1,2].map(i=>lo + pad + (hi-lo-2*pad)*i/2);
+  const hrs = [0,6,12,18,24].map(h=>t0 + h*3600e3);
+  const hhmm = t => new Date(t).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="رسم بياني لآخر 24 ساعة">
+    ${ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join("")}
+    <path d="${d}" fill="none" stroke="var(--chart)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <line id="cx" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" visibility="hidden"/>
+  </svg>
+  ${ticks.map(v=>`<div style="position:absolute;right:0;top:${y(v)/H*100}%;transform:translateY(-50%);font-size:11px;color:var(--muted)">${fmt(v)}</div>`).join("")}
+  <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 ${R/W*100}% 0 0">${hrs.map(t=>`<span>${hhmm(t)}</span>`).join("")}</div>
+  <div class="tip hidden" id="tip"></div>
+  <div id="dotm" class="hidden" style="position:absolute;width:10px;height:10px;border-radius:50%;background:var(--chart);border:2px solid var(--card);transform:translate(-50%,-50%);pointer-events:none"></div>`;
+  const svg = el.querySelector("svg"), tip = el.querySelector("#tip"), cx = el.querySelector("#cx"), dm = el.querySelector("#dotm");
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left)/r.width*W;
+    const t = t0 + (px-L)/(W-L-R)*(t1-t0);
+    let p = pts[0]; for(const q of pts){ if(q.t<=t) p=q; else break; }
+    if(px<L || px>W-R) return leave();
+    cx.setAttribute("x1",px); cx.setAttribute("x2",px); cx.setAttribute("visibility","visible");
+    const lx = px/W*100;
+    dm.style.left = lx+"%"; dm.style.top = (y(p.v)/H*200)+"px"; dm.classList.remove("hidden");
+    tip.textContent = `${fmt(p.v)} ${unit} · ${hhmm(Math.min(t,t1))}`; tip.style.left = Math.max(12,Math.min(88,lx))+"%"; tip.classList.remove("hidden");
+  };
+  const leave = () => { cx.setAttribute("visibility","hidden"); tip.classList.add("hidden"); dm.classList.add("hidden"); };
+  svg.addEventListener("pointermove", move); svg.addEventListener("pointerdown", move); svg.addEventListener("pointerleave", leave);
+}
+
+/* ================= SETTINGS ================= */
+$("settingsBtn").onclick = ()=>openSettings();
+function openSettings(first){
+  sheetEid = null;
+  const c = haConf();
+  openSheet(`<h3>${first ? "اربط بيتك" : "الإعدادات"}</h3>
+    <div class="sub">الحساب: ${esc(user?.email)}</div>
+    <form id="setForm">
+      <label for="sName">اسم البيت</label>
+      <input id="sName" type="text" value="${esc(c.name)}" placeholder="بيتي" style="direction:rtl;text-align:right">
+      <label for="sUrl">عنوان Home Assistant</label>
+      <input id="sUrl" type="url" value="${esc(c.url)}" placeholder="https://xxxx.ui.nabu.casa" required>
+      <label for="sTok">Long-Lived Access Token</label>
+      <input id="sTok" type="password" value="${esc(c.token)}" placeholder="eyJ0eXAiOi..." required>
+      <div class="hint">
+        <b>هتجيب الـ Token منين؟</b><br>
+        افتح Home Assistant ← دوس على اسمك تحت على الشمال (البروفايل) ← تبويب <b>Security</b> ← آخر الصفحة <b>Long-lived access tokens</b> ← <b>Create token</b> ← انسخه وحطه هنا.<br><br>
+        <b>أجهزة Tuya:</b> في Home Assistant روح <code>Settings ← Devices &amp; services ← Add integration ← Tuya</code> وامسح الكود من تطبيق Smart Life / Tuya. كل أجهزتك هتظهر هنا لوحدها.<br><br>
+        <b>العنوان:</b> لازم يكون https وتقدر توصله من بره البيت، زي Nabu Casa أو Cloudflare Tunnel.
+      </div>
+      <div class="err" id="setErr" style="color:var(--red)"></div>
+      <div class="btns"><button class="btn primary" type="submit">حفظ واتصال</button>${first?"":`<button class="btn" type="button" data-close>إلغاء</button>`}</div>
+    </form>`);
+  $("setForm").onsubmit = async e=>{
+    e.preventDefault();
+    const url = normUrl($("sUrl").value), token = $("sTok").value.trim(), home_name = $("sName").value.trim();
+    if(location.protocol==="https:" && url.startsWith("http:")){ $("setErr").textContent = "العنوان لازم يبدأ بـ https"; return; }
+    const { data, error } = await sb.auth.updateUser({ data:{ ha_url:url, ha_token:token, home_name } });
+    if(error){ $("setErr").textContent = "مقدرناش نحفظ: " + error.message; return; }
+    user = data.user; closeSheet(); toast("اتحفظ، بنتصل بالبيت…");
+    connectFromProfile();
+  };
+}
+
+/* ================= COMMANDS (text + voice) ================= */
+const N = s => String(s||"").toLowerCase()
+  .replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
+  .replace(/[٠-٩]/g, d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[،,.!?؟]/g," ").replace(/\s+/g," ").trim();
+const ON_W  = ["شغل","ولع","نور ","افتح","turn on","switch on","on ","open","start"];
+const OFF_W = ["اطفي","طفي","اقفل","قفل","سكر","وقف","turn off","switch off","off ","close","stop"];
+const ALL_W = ["كل","الكل","all "];
+
+$("cmdForm").addEventListener("submit", e=>{ e.preventDefault(); const t=$("cmd").value.trim(); if(t) runCommand(t, false); });
+async function runCommand(text, spoken){
+  $("cmd").value = "";
+  showReply("أنت: " + text, "…");
+  let reply;
+  try{
+    reply = await localCommand(text);
+    if(!reply) reply = await haConversation(text);
+  }catch(e){ reply = "حصلت مشكلة: " + e.message; }
+  showReply("أنت: " + text, reply);
+  if(spoken) say(reply);
+}
+function showReply(q, a){ const r=$("reply"); r.innerHTML = `<b>${esc(q)}</b>${esc(a)}`; r.classList.remove("hidden"); clearTimeout(showReply._t); showReply._t=setTimeout(()=>r.classList.add("hidden"), 9000); }
+
+// Handles the common ones right here (on/off/open/close/temperature by device or room name), so they work in Egyptian Arabic.
+async function localCommand(text){
+  const t = " " + N(text) + " ";
+  const has = ws => ws.some(w=>t.includes(" "+N(w)) || t.includes(N(w)+" "));
+  const wantOn = has(ON_W.filter(w=>w!=="نور ")) || /^\s*نور /.test(t);
+  const wantOff = has(OFF_W);
+  const num = (t.match(/(\d+(?:\.\d+)?)/)||[])[1];
+  const pool = store.list(CONTROL.concat(SCENES));
+  // best device by longest name match
+  const match = pool.map(s=>({ s, n:N(nameOf(s)) })).filter(x=>x.n.length>1 && t.includes(x.n)).sort((a,b)=>b.n.length-a.n.length)[0]?.s;
+  const area = store.areas.map(a=>({ a, n:N(a.name) })).filter(x=>x.n.length>1 && t.includes(x.n)).sort((a,b)=>b.n.length-a.n.length)[0]?.a;
+  const lightsWord = /(نور|انوار|اللمب|لمبه|لمبات|اضاءه|light)/.test(t);
+  const everything = has(ALL_W);
+
+  // scenes / scripts by name
+  if(match && SCENES.includes(dom(match.entity_id))){ await ha.call(dom(match.entity_id),"turn_on",match.entity_id); return "تمام، شغّلت " + nameOf(match); }
+
+  // temperature for an AC
+  if(num && (match && dom(match.entity_id)==="climate" || /(تكييف|مكيف|حراره|درجه|ac )/.test(t))){
+    const ac = match && dom(match.entity_id)==="climate" ? match : pool.find(s=>dom(s.entity_id)==="climate" && (!area || store.entArea[s.entity_id]===area.id));
+    if(ac){ await ha.call("climate","set_temperature",ac.entity_id,{ temperature:Number(num) }); return `تمام، خليت ${nameOf(ac)} على ${num}°`; }
+  }
+  if(!wantOn && !wantOff) return null;
+
+  // a single device
+  if(match && !everything){ return await doOnOff([match], wantOff && !wantOn ? "off" : (wantOn && !wantOff ? "on" : (wantOff?"off":"on"))); }
+
+  // a room, or "all the lights"
+  if(area || (everything && lightsWord) || (lightsWord && !match)){
+    let targets = pool.filter(s=>!SCENES.includes(dom(s.entity_id)) && dom(s.entity_id)!=="button" && dom(s.entity_id)!=="lock");
+    if(area) targets = targets.filter(s=>store.entArea[s.entity_id]===area.id);
+    if(lightsWord) targets = targets.filter(s=>dom(s.entity_id)==="light" || (dom(s.entity_id)==="switch" && /(نور|لمب|light|lamp)/.test(N(nameOf(s)))));
+    if(!everything && !area && lightsWord && targets.length>1) return null; // ambiguous, let Home Assistant try
+    if(targets.length) return await doOnOff(targets, wantOff ? "off" : "on", area?.name);
+  }
+  return null;
+}
+async function doOnOff(list, mode, room){
+  for(const s of list){
+    const d = dom(s.entity_id);
+    if(d==="cover") await ha.call("cover", mode==="on"?"open_cover":"close_cover", s.entity_id);
+    else if(d==="valve") await ha.call("valve", mode==="on"?"open_valve":"close_valve", s.entity_id);
+    else if(d==="lock"){ if(mode==="on"){ if(!confirm("تفتح " + nameOf(s) + "؟")) return "تمام، مفتحتش القفل"; await ha.call("lock","unlock",s.entity_id); } else await ha.call("lock","lock",s.entity_id); }
+    else if(d==="vacuum") await ha.call("vacuum", mode==="on"?"start":"return_to_base", s.entity_id);
+    else if(d==="scene"||d==="script") await ha.call(d,"turn_on",s.entity_id);
+    else if(d==="button") await ha.call("button","press",s.entity_id);
+    else await ha.call(d==="input_boolean"||d==="media_player"||d==="climate"||d==="fan"||d==="light"||d==="switch"||d==="humidifier"||d==="siren"||d==="water_heater" ? d : "homeassistant", mode==="on"?"turn_on":"turn_off", s.entity_id);
+  }
+  const what = list.length===1 ? nameOf(list[0]) : (room ? "كل حاجة في " + room : list.length + " أجهزة");
+  const isCover = list.length===1 && ["cover","valve","lock"].includes(dom(list[0].entity_id));
+  return "تمام، " + (mode==="on" ? (isCover?"فتحت ":"شغّلت ") : (isCover?"قفلت ":"طفيت ")) + what;
+}
+// Anything else goes to Home Assistant's own assistant (Assist).
+async function haConversation(text){
+  const ask = lang => ha.send({ type:"conversation/process", text, language: lang });
+  let r;
+  try{ r = await ask("ar"); }catch(e){ r = await ask(undefined); }
+  const speech = r?.response?.speech?.plain?.speech;
+  if(r?.response?.response_type==="error" || !speech) return speech || "مفهمتش الأمر، جرّب تقول اسم الجهاز زي ما هو مكتوب";
+  return speech;
+}
+function say(text){
+  try{
+    if(!window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text); u.lang = "ar-EG";
+    const v = speechSynthesis.getVoices().find(v=>v.lang.startsWith("ar")); if(v) u.voice = v;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+// voice
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false;
+$("mic").onclick = ()=>{
+  if(!SR){ toast("المتصفح ده مش بيدعم الأوامر الصوتية — جرّب Chrome أو Safari"); return; }
+  if(listening){ rec.stop(); return; }
+  rec = new SR(); rec.lang = "ar-EG"; rec.interimResults = true; rec.maxAlternatives = 1;
+  let finalText = "";
+  rec.onstart = ()=>{ listening = true; $("mic").classList.add("listening"); $("cmd").placeholder = "بسمعك… اتكلم"; };
+  rec.onresult = ev=>{
+    let interim = ""; finalText = "";
+    for(const r of ev.results){ if(r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript; }
+    $("cmd").value = finalText || interim;
+  };
+  rec.onerror = ev=>{ if(ev.error==="not-allowed") toast("اسمح للموقع يستخدم المايك من إعدادات المتصفح"); else if(ev.error!=="no-speech" && ev.error!=="aborted") toast("مشكلة في المايك: " + ev.error); };
+  rec.onend = ()=>{
+    listening = false; $("mic").classList.remove("listening"); $("cmd").placeholder = "اكتب أمر… مثلاً: شغّل نور الصالة";
+    const t = (finalText || $("cmd").value).trim(); if(t) runCommand(t, true);
+  };
+  try{ rec.start(); }catch(e){ toast("مقدرناش نشغّل المايك"); }
+};
+</script>
+</body>
+</html>
